@@ -5,26 +5,6 @@ backend/*.pyc
 backend/*.pyo
 backend/venv/      # Virtual environment (for Flask)
 
-# React (Frontend)
-client/node_modules/
-client/.env
-client/build/
-client/.DS_Store
-
-# Logs
-client/npm-debug.log*
-client/yarn-debug.log*
-client/yarn-error.log*
-
-# Editor/OS specific files
-client/.vscode/
-client/.idea/
-client/.eslintcache/
-client/.parcel-cache/
-client/dist/
-client/.pnp/
-client/pnp.js
-
 # Testing
 /coverage/
 

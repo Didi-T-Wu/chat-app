@@ -78,10 +78,19 @@ const Login = ()=> {
       }}
 
       const data = await response.json()
-      console.log("Login successful")
-      //TODO: get token and username from backend then login(using login function in auth context)
-      login(data.username, data.token)
+      console.log(data.msg)
 
+      // Get token and username from backend then login(using login function in auth context)
+      if (data?.username && data?.token) {
+        login(data.username, data.token);
+      } else {
+        // Log the error for monitoring, but avoid exposing sensitive data in production
+        console.error("Missing username or token",
+          { username: data?.username ? 'Present' : 'Missing', token: data?.token ? 'Present' : 'Missing' });
+
+        // TODO: Optionally show a user-friendly error message
+        alert("An error occurred. Please try logging in again.");
+      }
       setSuccessMsg("Login successful! Redirecting...");
 
     }catch(err){

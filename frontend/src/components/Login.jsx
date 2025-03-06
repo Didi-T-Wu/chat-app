@@ -105,9 +105,6 @@ const Login = ()=> {
   }
 
   return(<div>
-    <h1 className="text-2xl font-bold underline text-blue-500">
-      Hello world!
-    </h1>
     <form onSubmit={onFormSubmit}>
       <label>
         Username

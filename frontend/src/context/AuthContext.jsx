@@ -27,7 +27,26 @@ const AuthProvider = ({children}) => {
       setCurUser(storedCurUser)
     }
 
-  },[])
+    // Clear username and token from localStorage when the tab is closed
+    const handleTabClose = () => {
+      if (curUser) {
+        const username = sessionStorage.getItem('curUser')
+        localStorage.removeItem(`token_${username}`)
+        setUsers(prevUsers => {
+          const updatedUsers = {...prevUsers}
+          delete updatedUsers[username]
+          localStorage.setItem('loggedInUsers', JSON.stringify(updatedUsers))
+          return updatedUsers
+        });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleTabClose);
+    return () => {
+      window.removeEventListener('beforeunload', handleTabClose);
+    };
+
+  },[curUser])
 
   const login = (username, token)=> {
     console.log('login called')

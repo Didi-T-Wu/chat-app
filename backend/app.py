@@ -94,7 +94,7 @@ def register():
 
 @socketio.on('message')
 def handle_message(data):
-
+    print(' in handle_message')
     username_from_frontend = data.get('username','')
     msg = data.get('msg',"").strip()
 
@@ -149,17 +149,23 @@ def handle_connect():
                 active_users[user_id] = {"username": username, 'user_id': user.id }
                 print(f"Authenticated user {username} connected with session {user_id}")
             else:
+                print('if user else from handle_connection')
                 emit('auth_error', {'msg': 'Invalid token, user not found'}, to=user_id)
                 return
+            db.session.commit()  # Commit the changes
         except ExpiredSignatureError:
+            print('ExpiredSignatureError from handle_connection')
             emit('auth_error', {'msg': 'Token expired, please log in again'}, to=user_id)
             return
         except Exception as e:
+            print('Exception from handle_connection')
             print('error from handle_connection  except Exception as e')
             print(f"JWT verification failed: {e}")
             emit('auth_error', {'msg': 'Invalid token'}, to=user_id)
             return
-
+        finally:
+            db.session.remove()
+    print('before emit from handle_connection')
     emit('user_joined', {'system': True, 'username':username, 'msg': f"{username} joined the chat"}, broadcast=True)
 
 

@@ -1,7 +1,15 @@
-import { Button, HStack } from "@chakra-ui/react"
 import React from 'react';
+import {AuthForm } from './auth/AuthForm';
+import { Field } from '@chakra-ui/react';
+
+
 
 const Home = () =>{
-  return <div><HStack><Button size="lg" colorPalette="teal" variant="solid">home</Button></HStack></div>
+  return (
+    <div>
+      <h1>Home</h1>
+      <AuthForm/>
+    </div>
+  )
 }
 export default Home

@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate } from 'react-router-dom'
-import { ClipLoader } from "react-spinners";
 
 import { API_BASE_URL } from '../config';
 import { AuthContext } from '../context/AuthContext';
 
+import LoginForm from '../components/auth/LoginForm';
+
 const Login = ()=> {
-  const [formData, setFormData] = useState({username:'', password:''})
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false)
@@ -36,13 +36,9 @@ const Login = ()=> {
   }, [successMsg, navigate])
 
 
-  const onFormDataChange=(e)=>{
-    const {value, name} = e.target
-    setFormData((formData)=> ({...formData,[name]:value}))
-  }
 
-  const onFormSubmit= async (e)=> {
-    e.preventDefault()
+  const onHandleSubmit = async (formData)=> {
+
 
     // TODO: Handle login logic (validation, etc.)
     // Prevent submission if fields are empty
@@ -104,37 +100,10 @@ const Login = ()=> {
     }
   }
 
-  return(
-  <div>
-    <form onSubmit={onFormSubmit}>
-      <label>
-        Username
-        <input
-          type="text"
-          name="username"
-          value={formData.username}
-          onChange={onFormDataChange}
-          placeholder="Type your username"
-          autoComplete="off"
-          >
-        </input>
-      </label>
-      <label >
-        Password
-        <input
-          type="password"
-          name="password"
-          value={formData.password}
-          onChange={onFormDataChange}
-          placeholder="Type your password"
-          autoComplete="off"
-        >
-        </input>
-      </label>
-      <button type="submit" disabled={loading}>
-      {loading ? <ClipLoader size={15} color="#ffffff" /> : "Login"}
-      </button>
-    </form>
+  return(<div>
+
+    <LoginForm onSubmit={onHandleSubmit} loading={loading} />
+
     {errorMsg && <p style={{color:'red'}} aria-live="assertive" >{errorMsg}</p>}
     {successMsg && <p style={{ color: 'green' }} aria-live="polite">{successMsg}</p>}
     <br/> or

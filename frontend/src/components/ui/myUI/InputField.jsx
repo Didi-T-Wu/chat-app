@@ -1,11 +1,11 @@
 import { Input} from "@chakra-ui/react"
-import {Field} from "../../ui/field"
-import React from 'react';
+import { Field } from "../../ui/field"
+import React  from 'react';
 import PropTypes from 'prop-types';
 
-const InputField = ({ label, ...props }) => {
+const InputField =({ label, ...props }) => {
   return (
-    <Field label={label}>
+    <Field label={label} >
       <Input {...props} />
     </Field>
   );

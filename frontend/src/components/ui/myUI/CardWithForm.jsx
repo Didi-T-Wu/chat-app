@@ -1,7 +1,8 @@
-import { Button, Card, Stack } from "@chakra-ui/react"
+import { Card, Stack } from "@chakra-ui/react"
+import React from 'react';
 
 
-export const CardWithForm = ({cardTitle, cardDescription, inputFields}) => (
+const CardWithForm = ({cardTitle, cardDescription, inputFields, footerButtons}) => (
   <Card.Root maxW="sm">
     <Card.Header>
       <Card.Title>{cardTitle}</Card.Title>
@@ -15,8 +16,8 @@ export const CardWithForm = ({cardTitle, cardDescription, inputFields}) => (
       </Stack>
     </Card.Body>
     <Card.Footer justifyContent="flex-end">
-      <Button variant="outline">Cancel</Button>
-      <Button variant="solid">Sign in</Button>
+       { footerButtons }
     </Card.Footer>
   </Card.Root>
 )
+export default CardWithForm

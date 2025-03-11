@@ -29,6 +29,7 @@ const inputFields = [
     autoComplete: "off",
     required: true,
     "aria-label": "Enter your username",
+    w: "20rem",
   },
   {
     label: "Password",
@@ -40,6 +41,7 @@ const inputFields = [
     autoComplete: "off",
     required: true,
     "aria-label": "Enter your password",
+    w: "20rem",
   },
 ];
 

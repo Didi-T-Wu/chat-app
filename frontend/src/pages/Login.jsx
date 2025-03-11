@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate } from 'react-router-dom'
+import { Flex } from "@chakra-ui/react"
 
 import { API_BASE_URL } from '../config';
 import { AuthContext } from '../context/AuthContext';
 
 import LoginForm from '../components/auth/LoginForm';
+
 
 const Login = ()=> {
   const [errorMsg, setErrorMsg] = useState('');
@@ -100,16 +102,16 @@ const Login = ()=> {
     }
   }
 
-  return(<div>
-
-    <LoginForm onSubmit={onHandleSubmit} loading={loading} />
-
-    {errorMsg && <p style={{color:'red'}} aria-live="assertive" >{errorMsg}</p>}
-    {successMsg && <p style={{ color: 'green' }} aria-live="polite">{successMsg}</p>}
-    <br/> or
-    <div><Link to='/signup'>Create an Account</Link></div>
-  </div>)
-
+  return(
+    <Flex justify="center" align="center" h="100vh">
+      <div >
+        <LoginForm onSubmit={onHandleSubmit} loading={loading} />
+        {errorMsg && <p style={{color:'red'}} aria-live="assertive" >{errorMsg}</p>}
+        {successMsg && <p style={{ color: 'green' }} aria-live="polite">{successMsg}</p>}
+        <br/> or
+        <div><Link to='/signup'>Create an Account</Link></div>
+      </div>
+  </Flex>)
 }
 
 export default Login;

@@ -2,6 +2,13 @@ import React,  { createContext, useState, useEffect,  useRef }  from 'react';
 
 const AuthContext = createContext()
 
+// TODO: refactor the AuthProvider component
+// signup → Registers the user on the backend, then calls authenticate.
+// login → Logs the user in, then calls authenticate.
+// authenticate → Handles storing the token, updating users, and setting curUser.
+// logout → Logs the user out, then calls authenticate.
+// getCurUserToken → Returns the token for the current user.
+
 const AuthProvider = ({children}) => {
   console.log("AuthProvider component is rendering");
 
@@ -48,8 +55,8 @@ const AuthProvider = ({children}) => {
 
   },[curUser])
 
-  const login = (username, token)=> {
-    console.log('login called')
+  const authenticate = (username, token)=> {
+    console.log('authenticate called')
     setUsers(prevUsers => {
      const updatedUsers = {...prevUsers, [username]:token}
      localStorage.setItem('loggedInUsers', JSON.stringify(updatedUsers))
@@ -81,7 +88,7 @@ const AuthProvider = ({children}) => {
   }
 
   return (
-      <AuthContext.Provider value={{users, curUser, login, logout, getCurUserToken }}>
+      <AuthContext.Provider value={{users, curUser, authenticate, logout, getCurUserToken }}>
           {children}
       </AuthContext.Provider>
   );

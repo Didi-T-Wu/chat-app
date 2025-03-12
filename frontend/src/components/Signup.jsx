@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate } from 'react-router-dom'
 import { ClipLoader } from "react-spinners";
 
+import { AuthContext } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
+
 
 const Signup = ()=> {
   const [formData, setFormData] = useState({username:'', password:''})
@@ -10,6 +12,7 @@ const Signup = ()=> {
   const [successMsg, setSuccessMsg] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const { authenticate } = useContext(AuthContext)
 
   useEffect(() => {
     if (errorMsg) {
@@ -62,10 +65,9 @@ const Signup = ()=> {
       }}
 
       const data = await response.json()
-      console.log("Sign up successful")
+      console.log(data.msg)
       console.log('data received from backend in Signup.js', data)
-      localStorage.setItem('token', data.token)
-
+      authenticate(data.username, data.token)
       setSuccessMsg("Sign up successful! Redirecting...");
       setTimeout(() => navigate('/chat'), 1500);  // Wait 1.5 sec before redirecting
 

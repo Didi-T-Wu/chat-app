@@ -2,15 +2,14 @@ import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate } from 'react-router-dom'
 import { Flex, Link as ChakraLink, Text } from "@chakra-ui/react"
 
-import { API_BASE_URL } from '../config';
 import { AuthContext } from '../context/AuthContext';
+import { API_BASE_URL } from '../config';
+import SignupForm from "../components/auth/SignupForm";
 
-import LoginForm from '../components/auth/LoginForm';
 
-
-const Login = ()=> {
+const Signup = ()=> {
   const [errorMsg, setErrorMsg] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('')
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
   const { authenticate } = useContext(AuthContext)
@@ -25,36 +24,22 @@ const Login = ()=> {
     }
   }, [errorMsg]);
 
-  useEffect(()=>{
-    if(successMsg){
-      console.log("Success message set, starting redirect timeout...");
-      const timer = setTimeout(() => {
-        console.log("Redirecting to /chat...");
-        navigate('/chat')
-      }, 1500);  // Wait 1.5 sec before redirecting
-      return () => clearTimeout(timer);
-    }
 
-  }, [successMsg, navigate])
+  const onHandleSubmit= async (formData)=> {
 
-
-
-  const onHandleSubmit = async (formData)=> {
-
-
-    // TODO: Handle login logic (validation, etc.)
+    // TODO: Handle Sign up logic (validation, etc.)
     // Prevent submission if fields are empty
     if (!formData.username.trim() || !formData.password.trim()) {
       setErrorMsg("Username and password are required");
       return;
     }
 
-    console.log("Login Data:", formData);
+    console.log("Signup Data:", formData);
     setLoading(true);
     setErrorMsg('');
 
     try{
-      const response =  await fetch(`${API_BASE_URL}/api/login`, {
+      const response =  await fetch(`${API_BASE_URL}/api/signup`, {
         method:"POST",
         headers:{ "Content-Type": "application/json" },
         body:JSON.stringify(formData)
@@ -63,10 +48,8 @@ const Login = ()=> {
       if(!response.ok){
         const errorData = await response.json();
         switch(response.status){
-          case 401:
-            throw new Error(errorData.msg || 'Invalid credentials')
           case 400:
-            throw new Error(errorData.msg || "Invalid input. Please check your details and try again.")
+            throw new Error(errorData.msg || "Invalid input. Please check your details and try again.");
           case 404:
             throw new Error("Server not found. Please try again later.")
           case 500:
@@ -77,19 +60,10 @@ const Login = ()=> {
 
       const data = await response.json()
       console.log(data.msg)
-
-      // Get token and username from backend then login(using login function in auth context)
-      if (data?.username && data?.token) {
-        authenticate(data.username, data.token);
-      } else {
-        // Log the error for monitoring, but avoid exposing sensitive data in production
-        console.error("Missing username or token",
-          { username: data?.username ? 'Present' : 'Missing', token: data?.token ? 'Present' : 'Missing' });
-
-        // TODO: Optionally show a user-friendly error message
-        alert("An error occurred. Please try logging in again.");
-      }
-      setSuccessMsg("Login successful! Redirecting...");
+      console.log('data received from backend in Signup.js', data)
+      authenticate(data.username, data.token)
+      setSuccessMsg("Sign up successful! Redirecting...");
+      setTimeout(() => navigate('/chat'), 1500);  // Wait 1.5 sec before redirecting
 
     }catch(err){
       if (err.message.includes("Failed to fetch")) {
@@ -105,18 +79,18 @@ const Login = ()=> {
   return(
     <Flex justify="center" align="center" h="100vh" direction="column">
       <div >
-        <LoginForm onSubmit={onHandleSubmit} loading={loading} />
+        <SignupForm onSubmit={onHandleSubmit} loading={loading} />
         {errorMsg && <p style={{color:'red'}} aria-live="assertive" >{errorMsg}</p>}
         {successMsg && <p style={{ color: 'green' }} aria-live="polite">{successMsg}</p>}
       </div>
       <br/>
-      <Text>Do not have an account ? {" "}{" "}
+      <Text>Already have an account ? {" "}{" "}
         <ChakraLink asChild variant="underline" color="cyan.500">
-          <Link to='/signup'>Create an Account</Link>
+          <Link to='/login'>To Login Page</Link>
         </ChakraLink>{" "}
       </Text>
     </Flex>
   )
 }
 
-export default Login;
+export default Signup;

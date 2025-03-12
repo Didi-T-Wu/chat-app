@@ -11,7 +11,7 @@ const Login = ()=> {
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
-  const { login } = useContext(AuthContext)
+  const { authenticate } = useContext(AuthContext)
 
   useEffect(() => {
     if (errorMsg) {
@@ -82,7 +82,7 @@ const Login = ()=> {
 
       // Get token and username from backend then login(using login function in auth context)
       if (data?.username && data?.token) {
-        login(data.username, data.token);
+        authenticate(data.username, data.token);
       } else {
         // Log the error for monitoring, but avoid exposing sensitive data in production
         console.error("Missing username or token",

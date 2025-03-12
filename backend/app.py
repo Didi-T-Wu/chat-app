@@ -1,11 +1,10 @@
 from flask import Flask, request
-from flask_socketio import SocketIO, send, emit
+from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 from flask_migrate import Migrate  # Import Flask-Migrate
 from config import Config
 from models import User, Message, connect_db, db
-from uuid import uuid4, UUID
-from random import randint
+from uuid import uuid4
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import create_access_token, decode_token, JWTManager
 from jwt import ExpiredSignatureError
@@ -81,6 +80,7 @@ def register():
         return {
             "msg": "User registered successfully",
             "token": access_token,
+            "username": new_user.username
             }, 201
 
     except Exception as e:

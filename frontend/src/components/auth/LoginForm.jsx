@@ -1,11 +1,11 @@
-import AuthForm      from "../ui/myUI/myForm";
+import AuthForm from "../ui/myUI/myForm";
 import React, { useState, useCallback} from 'react';
 import { ClipLoader } from "react-spinners";
 
 
 
 const LoginForm = ({ onSubmit, loading }) => {
-  const [formData, setFormData] = useState({username:'', password:''})
+  const [formData, setFormData] = useState({ username:'', password:'' })
 
   const onFormDataChange = useCallback((e) => {
     const { value, name } = e.target;
@@ -15,6 +15,11 @@ const LoginForm = ({ onSubmit, loading }) => {
   const onFormSubmit = (e) => {
     e.preventDefault()
     onSubmit(formData)
+  }
+
+  const onHandleCancel = () => {
+    console.log("Cancel button clicked")
+    setFormData({ username:'', password:'' })
   }
 
   // Define inputFields **outside** LoginForm so it's not re-created every render
@@ -46,7 +51,13 @@ const inputFields = [
 ];
 
 const footerButtons = [
-  { variant: "solid",
+  {
+    variant:"outline",
+    buttonText: "Cancel",
+    onClick: onHandleCancel,
+  },
+  {
+    variant: "solid",
     type: "submit",
     buttonText: loading ? <ClipLoader size={15} color="#ffffff" /> : "Login",
     color:"cyan.500",

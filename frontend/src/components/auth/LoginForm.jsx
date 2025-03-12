@@ -55,6 +55,7 @@ const footerButtons = [
     variant:"outline",
     buttonText: "Cancel",
     onClick: onHandleCancel,
+    isDisabled: loading,
   },
   {
     variant: "solid",

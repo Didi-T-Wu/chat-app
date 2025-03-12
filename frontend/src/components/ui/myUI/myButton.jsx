@@ -1,5 +1,5 @@
 import { Button } from "@chakra-ui/react"
-import React,{ memo} from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 
 const myButton = ({ buttonText, ...props }) => {

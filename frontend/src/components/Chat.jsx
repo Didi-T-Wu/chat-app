@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
 import { io } from "socket.io-client";
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { API_BASE_URL } from '../config';
 import { AuthContext } from "../context/AuthContext";
 
@@ -8,9 +8,10 @@ import { AuthContext } from "../context/AuthContext";
 const Chat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
+   const [successMsg, setSuccessMsg] = useState('');
   const socketRef = useRef(null);  // Use ref to persist socket instance across renders
   const navigate = useNavigate();
-  const { curUser, getCurUserToken } = useContext(AuthContext);
+  const { curUser, getCurUserToken, logout } = useContext(AuthContext);
 
   // 1. Handle Authentication (Token validation and Navigation)
   useEffect(() => {
@@ -58,6 +59,8 @@ const Chat = () => {
       });
     }
 
+
+
     // Cleanup function to disconnect socket and remove event listeners
     return () => {
       console.log("Chat.js unMounted");
@@ -70,6 +73,18 @@ const Chat = () => {
     };
   }, [curUser, getCurUserToken, navigate]);  // Runs when curUser or getCurUserToken changes
 
+  useEffect(()=>{
+      if(successMsg){
+        console.log("Success message set, logout...");
+        const timer = setTimeout(() => {
+          console.log("Redirecting to /login...");
+          navigate('/login')
+        }, 1500);  // Wait 1.5 sec before redirecting
+        return () => clearTimeout(timer);
+      }
+
+    }, [successMsg, navigate])
+
   const sendMessage = (e) => {
     e.preventDefault();
     if (message.trim() && socketRef.current) {
@@ -77,6 +92,13 @@ const Chat = () => {
       setMessage(""); // Clear the message input
     }
   };
+
+  const handleLogout = () => {
+    console.log(`Logging out ${curUser} in Chat.js`);
+    setSuccessMsg('Logging out...');
+    logout(curUser);
+    socketRef.current.disconnect();  // This will properly disconnect the socket
+  }
 
   return (
     <div>
@@ -101,6 +123,8 @@ const Chat = () => {
           Send
         </button>
       </form>
+      <button onClick={handleLogout}>Logout</button>
+      {successMsg && <p style={{ color: 'green' }} aria-live="polite">{successMsg}</p>}
     </div>
   );
 };

@@ -19,7 +19,10 @@ migrate = Migrate(app, db)  # Initialize Flask-Migrate
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
-active_users = {} # Tracks authenticated users
+active_users = {} # Tracks logged in  users
+#TODO: handle expired tokens
+#TODO: Set a timeout mechanism to clear inactive sessions.
+#TODO: Regularly clear old or inactive entries using a cleanup process (e.g., apscheduler or background task).
 
 @app.route('/')
 def index():
@@ -75,7 +78,7 @@ def register():
         print('new_user.id from /api/signup', new_user.id)
         # Generate JWT token
         access_token = create_access_token(identity=new_user.id)
-        print('access_token from /api/signup',access_token )
+        print('access_token from /api/signup', access_token)
 
         return {
             "msg": "User registered successfully",
@@ -102,25 +105,24 @@ def handle_message(data):
         emit('error', {'msg': 'Invalid user or empty message'}, to=request.sid)
         return
 
-    if not username_from_frontend.startswith('Guest'):
-        # registered user, verify it and save the msg in the db
-        cur_user = User.query.filter_by(username = username_from_frontend).one_or_none()
+    # registered user, verify it and save the msg in the db
+    cur_user = User.query.filter_by(username = username_from_frontend).one_or_none()
 
-        if not cur_user:
-            emit('error', {'msg': 'User not found'}, to=request.sid)
-            return
+    if not cur_user:
+        emit('error', {'msg': 'User not found'}, to=request.sid)
+        return
 
 
-        new_msg= Message(user_id = cur_user.id, text=msg)
+    new_msg= Message(user_id = cur_user.id, text=msg)
 
-        try:
-            db.session.add(new_msg)
-            db.session.commit()
-        except Exception as e:
-            print(f"Database error: {e}")
-            db.session.rollback() # Undo the changes made during this session
-            emit('error', {'msg': 'Failed to store message'}, to=request.sid)
-            return
+    try:
+        db.session.add(new_msg)
+        db.session.commit()
+    except Exception as e:
+        print(f"Database error: {e}")
+        db.session.rollback() # Undo the changes made during this session
+        emit('error', {'msg': 'Failed to store message'}, to=request.sid)
+        return
 
     print(f"Message from {username_from_frontend}: {msg}")
     emit('new_message',{'system': False, 'username':username_from_frontend, 'msg':msg}, broadcast=True)
@@ -132,8 +134,6 @@ def handle_connect():
     user_id = request.sid # Unique session ID for the client
 
     token = request.args.get('token') # Get the JWT token from the query params
-    if not token:
-        print('token received from request.args.get("token")', token)
 
     username = None
 
@@ -149,23 +149,21 @@ def handle_connect():
                 active_users[user_id] = {"username": username, 'user_id': user.id }
                 print(f"Authenticated user {username} connected with session {user_id}")
             else:
-                print('if user else from handle_connection')
                 emit('auth_error', {'msg': 'Invalid token, user not found'}, to=user_id)
+                socketio.disconnect(user_id)  # Force disconnect
                 return
             db.session.commit()  # Commit the changes
         except ExpiredSignatureError:
-            print('ExpiredSignatureError from handle_connection')
             emit('auth_error', {'msg': 'Token expired, please log in again'}, to=user_id)
+            socketio.disconnect(user_id)  # Force disconnect
             return
         except Exception as e:
-            print('Exception from handle_connection')
-            print('error from handle_connection  except Exception as e')
             print(f"JWT verification failed: {e}")
             emit('auth_error', {'msg': 'Invalid token'}, to=user_id)
+            socketio.disconnect(user_id)  # Force disconnect
             return
         finally:
-            db.session.remove()
-    print('before emit from handle_connection')
+            db.session.remove()  # Close the session
     emit('user_joined', {'system': True, 'username':username, 'msg': f"{username} joined the chat"}, broadcast=True)
 
 

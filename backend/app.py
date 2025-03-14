@@ -20,7 +20,14 @@ bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
 active_users = {} # Tracks logged in  users
-#TODO: handle expired tokens
+#
+# active_users[user.id] = {
+#     "username": username,
+#     "session_ids": [request.sid]  # Store all sessions for this user
+# }
+# prevent duplicates by tracking active users with user_id instead of request.sid.
+
+
 #TODO: Set a timeout mechanism to clear inactive sessions.
 #TODO: Regularly clear old or inactive entries using a cleanup process (e.g., apscheduler or background task).
 
@@ -131,51 +138,71 @@ def handle_message(data):
 @socketio.on('connect')
 def handle_connect():
     print("A user connected!")
-    user_id = request.sid # Unique session ID for the client
 
     token = request.args.get('token') # Get the JWT token from the query params
 
+    #if no token, emit an error and disconnect the user
+    if not token:
+        emit('auth_error', {'msg': 'No token provided'}, to=request.sid)
+        socketio.disconnect(request.sid)  # Force disconnect
+        return
     username = None
 
-    if token:
-        try:
-            decoded_token = decode_token(token) # Manually decode JWT
-            user_uuid = decoded_token.get("sub")  # Extract user ID
-            # user_uuid = UUID(identity)  ###### NO Convert back to UUID !!!!!!!
-            user = User.query.filter_by(id = user_uuid).one_or_none()
+    try:
+        decoded_token = decode_token(token) # Manually decode JWT
+        user_uuid = decoded_token.get("sub")  # Extract user ID
+        # user_uuid = UUID(identity)  ###### NO Convert back to UUID !!!!!!!
+        user = User.query.filter_by(id = user_uuid).one_or_none()
 
-            if user:
-                username = user.username
-                active_users[user_id] = {"username": username, 'user_id': user.id }
-                print(f"Authenticated user {username} connected with session {user_id}")
+        if user:
+            username = user.username
+            if user.id in active_users:
+                active_users[user.id]['session_ids'].append(request.sid)
             else:
-                emit('auth_error', {'msg': 'Invalid token, user not found'}, to=user_id)
-                socketio.disconnect(user_id)  # Force disconnect
-                return
-            db.session.commit()  # Commit the changes
-        except ExpiredSignatureError:
-            emit('auth_error', {'msg': 'Token expired, please log in again'}, to=user_id)
-            socketio.disconnect(user_id)  # Force disconnect
+                active_users[user.id] = {
+                    "username": username,
+                    'session_ids': [request.sid]
+                }
+
+            print(f"Authenticated user {username} connected with session {request.sid}")
+        else:
+            emit('auth_error', {'msg': 'Invalid token, user not found'}, to=request.sid)
+            socketio.disconnect(request.sid)
             return
-        except Exception as e:
-            print(f"JWT verification failed: {e}")
-            emit('auth_error', {'msg': 'Invalid token'}, to=user_id)
-            socketio.disconnect(user_id)  # Force disconnect
-            return
-        finally:
-            db.session.remove()  # Close the session
-    emit('user_joined', {'system': True, 'username':username, 'msg': f"{username} joined the chat"}, broadcast=True)
+        db.session.commit()  # Commit the changes
+    except ExpiredSignatureError:
+        emit('auth_error', {'msg': 'Token expired, please log in again'}, to=request.sid)
+        socketio.disconnect(request.sid)
+        return
+    except Exception as e:
+        print(f"JWT verification failed: {e}")
+        emit('auth_error', {'msg': 'Invalid token'}, to=request.sid)
+        socketio.disconnect(request.sid)
+        return
+    finally:
+        db.session.remove()  # Close the session
+    emit('user_joined', {
+        'system': True,
+        'username':username,
+        'msg': f"{username} joined the chat"
+    }, broadcast=True )
 
 
 
 @socketio.on('disconnect')
 def handle_disconnect():
     print('A user disconnected')
-    user_id = request.sid
-    if user_id in active_users:
-        username = active_users.pop(user_id)['username']
-        emit('user_left', {'system': True, 'msg': f"{username} left the chat"}, broadcast=True)
-        print(f"User {username} ({user_id}) disconnected from active users!")
+
+    for user_id, data in active_users.items():
+        if request.sid in data['session_ids']:
+            data['session_ids'].remove(request.sid)
+            if not data['session_ids']:
+                username = data['username']
+                active_users.pop(user_id)
+                emit('user_left', {'system': True, 'msg': f"{username} left the chat"}, broadcast=True)
+                print(f"User {username} ({user_id}) disconnected from active users!")
+            break
+
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, host="localhost", port=5001)

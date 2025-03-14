@@ -7,7 +7,7 @@ from models import User, Message, connect_db, db
 from uuid import uuid4
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import create_access_token, decode_token, JWTManager
-from jwt import ExpiredSignatureError
+from jwt import ExpiredSignatureError, InvalidTokenError
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -30,7 +30,7 @@ active_users = {} # Tracks logged in  users
 
 #TODO: Set a timeout mechanism to clear inactive sessions.
 #TODO: Regularly clear old or inactive entries using a cleanup process (e.g., apscheduler or background task).
-
+#TODO: use app.logger
 @app.route('/')
 def index():
     return "Flask Backend Running"
@@ -150,6 +150,11 @@ def handle_connect():
 
     try:
         decoded_token = decode_token(token) # Manually decode JWT
+
+        # Check if the decoded token has the expected fields
+        if 'sub' not in decoded_token or 'exp' not in decoded_token:
+            raise InvalidTokenError("Token is missing required claims.")
+
         user_uuid = decoded_token.get("sub")  # Extract user ID
         # user_uuid = UUID(identity)  ###### NO Convert back to UUID !!!!!!!
         user = User.query.filter_by(id = user_uuid).one_or_none()
@@ -158,13 +163,19 @@ def handle_connect():
             username = user.username
             if user.id in active_users:
                 active_users[user.id]['session_ids'].append(request.sid)
+                print(f"Authenticated user {username} connected again with session {request.sid}")
             else:
                 active_users[user.id] = {
                     "username": username,
                     'session_ids': [request.sid]
                 }
-
-            print(f"Authenticated user {username} connected with session {request.sid}")
+                print(f"Authenticated user {username} connected with session {request.sid}")
+                # Emit "user_joined" only the first time the user connects
+                emit('user_joined', {
+                    'system': True,
+                    'username': user.username,
+                    'msg': f"{user.username} joined the chat"
+                }, broadcast=True)
         else:
             emit('auth_error', {'msg': 'Invalid token, user not found'}, to=request.sid)
             socketio.disconnect(request.sid)
@@ -174,6 +185,10 @@ def handle_connect():
         emit('auth_error', {'msg': 'Token expired, please log in again'}, to=request.sid)
         socketio.disconnect(request.sid)
         return
+    except InvalidTokenError as e:
+        emit('auth_error', {'msg': str(e)}, to=request.sid)
+        socketio.disconnect(request.sid)
+        return
     except Exception as e:
         print(f"JWT verification failed: {e}")
         emit('auth_error', {'msg': 'Invalid token'}, to=request.sid)
@@ -181,12 +196,6 @@ def handle_connect():
         return
     finally:
         db.session.remove()  # Close the session
-    emit('user_joined', {
-        'system': True,
-        'username':username,
-        'msg': f"{username} joined the chat"
-    }, broadcast=True )
-
 
 
 @socketio.on('disconnect')

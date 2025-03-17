@@ -11,7 +11,7 @@ const Chat = () => {
    const [successMsg, setSuccessMsg] = useState('');
   const socketRef = useRef(null);  // Use ref to persist socket instance across renders
   const navigate = useNavigate();
-  const { curUser, getCurUserToken, logout } = useContext(AuthContext);
+  const { curUser, tabId, getCurUserToken, logout } = useContext(AuthContext);
 
   // 1. Handle Authentication (Token validation and Navigation)
   useEffect(() => {
@@ -22,6 +22,10 @@ const Chat = () => {
     if (!curUserToken) {
       console.log('no token');
       navigate('/login'); // Redirect to login if token is missing
+    }
+    if(curUserToken && curUser){
+      console.log('token and user are present');
+      navigate('/chat');
     }
   }, [curUser, getCurUserToken, navigate]);  // Runs only when curUser or getCurUserToken changes
 
@@ -34,7 +38,11 @@ const Chat = () => {
     // Initialize socket connection only if not already initialized
     if (!socketRef.current) {
       console.log('Initialize socket connection in useEffect in Chat.js');
-      socketRef.current = io(API_BASE_URL, { query: { token: curUserToken } });
+      socketRef.current = io(API_BASE_URL, {
+          query: {
+            token: curUserToken
+          }
+      });
 
       // Remove old event listeners before adding new ones
       socketRef.current.removeAllListeners();
@@ -58,7 +66,6 @@ const Chat = () => {
         navigate("/login");
       });
     }
-
 
 
     // Cleanup function to disconnect socket and remove event listeners
@@ -94,10 +101,35 @@ const Chat = () => {
   };
 
   const handleLogout = () => {
-    console.log(`Logging out ${curUser} in Chat.js`);
+
+    console.log('Logging out...');
+
+    // Check if the socket is connected
+    if (socketRef.current && socketRef.current.connected) {
+        console.log('Socket is connected, disconnecting...');
+        socketRef.current.disconnect();
+    } else {
+        console.log('Socket was already disconnected');
+    }
+
+    // Disable automatic reconnection after logout (if it's enabled)
+    if (socketRef.current) {
+        socketRef.current.io.opts.reconnection = false; // Disable reconnection
+        socketRef.current.io.engine.close(); // Explicitly close the connection
+    }
+
+    // Set the success message
     setSuccessMsg('Logging out...');
-    logout(curUser);
-    socketRef.current.disconnect();  // This will properly disconnect the socket
+
+    // Call your logout functionality to clear user data and token
+    logout(curUser, tabId);
+
+    // After disconnecting, stop any further socket events from being emitted
+    if (!socketRef.current || !socketRef.current.connected) {
+        console.log('Socket disconnected, skipping further socket actions');
+    }
+
+    console.log('Logout complete');
   }
 
   return (
@@ -124,6 +156,7 @@ const Chat = () => {
         </button>
       </form>
       <button onClick={handleLogout}>Logout</button>
+
       {successMsg && <p style={{ color: 'green' }} aria-live="polite">{successMsg}</p>}
     </div>
   );

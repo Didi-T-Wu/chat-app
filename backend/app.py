@@ -1,5 +1,5 @@
 from flask import Flask, request
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, disconnect
 from flask_cors import CORS
 from flask_migrate import Migrate  # Import Flask-Migrate
 from config import Config
@@ -20,6 +20,7 @@ bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
 active_users = {} # Tracks logged in  users
+
 #
 # active_users[user.id] = {
 #     "username": username,
@@ -34,6 +35,15 @@ active_users = {} # Tracks logged in  users
 @app.route('/')
 def index():
     return "Flask Backend Running"
+
+@app.route('/api/users/active', methods=['GET'])
+def get_active_users():
+    active_usernames = []
+    for data in active_users.values():
+        active_usernames.append(data['username'])
+
+    return active_usernames, 200
+
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -101,10 +111,23 @@ def register():
         app.logger.error(f"Error registering user: {str(e)}")
         return {"msg": f"Error registering user: {str(e)}"}, 500
 
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    data = request.json
+    username = data.get("username")
+
+    print('username from /api/logout', username)
+    if not username:
+        return {"msg": "Missing username"}, 400
+    return { "msg": "User logout successfully"}, 200
+
+
 
 @socketio.on('message')
 def handle_message(data):
     print(' in handle_message')
+    for user in active_users.values():
+        print('users in active_users.values()', user['username'])
     username_from_frontend = data.get('username','')
     msg = data.get('msg',"").strip()
 
@@ -138,7 +161,7 @@ def handle_message(data):
 @socketio.on('connect')
 def handle_connect():
     print("A user connected!")
-
+    print('request.sid', request.sid)
     token = request.args.get('token') # Get the JWT token from the query params
 
     #if no token, emit an error and disconnect the user
@@ -146,7 +169,6 @@ def handle_connect():
         emit('auth_error', {'msg': 'No token provided'}, to=request.sid)
         socketio.disconnect(request.sid)  # Force disconnect
         return
-    username = None
 
     try:
         decoded_token = decode_token(token) # Manually decode JWT
@@ -178,21 +200,21 @@ def handle_connect():
                 }, broadcast=True)
         else:
             emit('auth_error', {'msg': 'Invalid token, user not found'}, to=request.sid)
-            socketio.disconnect(request.sid)
+            disconnect(request.sid)
             return
         db.session.commit()  # Commit the changes
     except ExpiredSignatureError:
         emit('auth_error', {'msg': 'Token expired, please log in again'}, to=request.sid)
-        socketio.disconnect(request.sid)
+        disconnect(request.sid)
         return
     except InvalidTokenError as e:
         emit('auth_error', {'msg': str(e)}, to=request.sid)
-        socketio.disconnect(request.sid)
+        disconnect(request.sid)
         return
     except Exception as e:
         print(f"JWT verification failed: {e}")
         emit('auth_error', {'msg': 'Invalid token'}, to=request.sid)
-        socketio.disconnect(request.sid)
+        disconnect(request.sid)
         return
     finally:
         db.session.remove()  # Close the session
@@ -211,6 +233,10 @@ def handle_disconnect():
                 emit('user_left', {'system': True, 'msg': f"{username} left the chat"}, broadcast=True)
                 print(f"User {username} ({user_id}) disconnected from active users!")
             break
+
+    # Manually disconnect the socket session
+    disconnect()
+    print(f"Manually disconnected socket for SID {request.sid}")
 
 
 if __name__ == '__main__':

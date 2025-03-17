@@ -13,7 +13,17 @@ const Login = ()=> {
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
-  const { authenticate } = useContext(AuthContext)
+  const { authenticate, curUser, getCurUserToken } = useContext(AuthContext)
+
+   useEffect(() => {
+      const curUserToken = getCurUserToken(curUser);
+      console.log('token from localStorage in useEffect in Login.js', curUserToken);
+
+      if(curUserToken && curUser){
+        console.log('token and user are present');
+        navigate('/chat');
+      }
+    }, [curUser, getCurUserToken, navigate]);  // Runs only when curUser or getCurUserToken changes
 
   useEffect(() => {
     if (errorMsg) {

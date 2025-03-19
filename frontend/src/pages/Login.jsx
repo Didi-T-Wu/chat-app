@@ -15,10 +15,14 @@ const Login = ()=> {
   const navigate = useNavigate()
   const { authenticate, curUser, getCurUserToken } = useContext(AuthContext)
 
-   useEffect(() => {
+  console.log('Login component rendering');
+
+  useEffect(() => {
+      console.log('curUser in useEffect in Login.js', curUser);
       const curUserToken = getCurUserToken(curUser);
       console.log('token from localStorage in useEffect in Login.js', curUserToken);
 
+      console.log('checking if token and user are present in useEffect in Login.js');
       if(curUserToken && curUser){
         console.log('token and user are present');
         navigate('/chat');
@@ -26,6 +30,7 @@ const Login = ()=> {
     }, [curUser, getCurUserToken, navigate]);  // Runs only when curUser or getCurUserToken changes
 
   useEffect(() => {
+    console.log('errorMsg in useEffect in Login.js', errorMsg);
     if (errorMsg) {
       const timer = setTimeout(() => {
         setErrorMsg('');
@@ -36,6 +41,7 @@ const Login = ()=> {
   }, [errorMsg]);
 
   useEffect(()=>{
+    console.log('successMsg in useEffect in Login.js', successMsg);
     if(successMsg){
       console.log("Success message set, starting redirect timeout...");
       const timer = setTimeout(() => {
@@ -86,7 +92,7 @@ const Login = ()=> {
       }}
 
       const data = await response.json()
-      console.log(data.msg)
+      console.log('successful logging msg in Login from backend',data.msg)
 
       // Get token and username from backend then login(using login function in auth context)
       if (data?.username && data?.token) {

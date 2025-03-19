@@ -19,19 +19,14 @@ migrate = Migrate(app, db)  # Initialize Flask-Migrate
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
-active_users = {} # Tracks logged in  users
 
-#
+active_users = {} # Tracks logged in  users
 # active_users[user.id] = {
 #     "username": username,
 #     "session_ids": [request.sid]  # Store all sessions for this user
 # }
 # prevent duplicates by tracking active users with user_id instead of request.sid.
 
-
-#TODO: Set a timeout mechanism to clear inactive sessions.
-#TODO: Regularly clear old or inactive entries using a cleanup process (e.g., apscheduler or background task).
-#TODO: use app.logger
 @app.route('/')
 def index():
     return "Flask Backend Running"
@@ -41,7 +36,7 @@ def get_active_users():
     active_usernames = []
     for data in active_users.values():
         active_usernames.append(data['username'])
-
+    print('active_usernames',active_usernames)
     return active_usernames, 200
 
 
@@ -111,23 +106,21 @@ def register():
         app.logger.error(f"Error registering user: {str(e)}")
         return {"msg": f"Error registering user: {str(e)}"}, 500
 
-@app.route('/api/logout', methods=['POST'])
-def logout():
-    data = request.json
-    username = data.get("username")
+# @app.route('/api/logout', methods=['POST'])
+# def logout():
+#     data = request.json
+#     username = data.get("username")
 
-    print('username from /api/logout', username)
-    if not username:
-        return {"msg": "Missing username"}, 400
-    return { "msg": "User logout successfully"}, 200
+#     print('username from /api/logout', username)
+#     if not username:
+#         return {"msg": "Missing username"}, 400
+#     return { "msg": "User logout successfully"}, 200
 
 
 
 @socketio.on('message')
 def handle_message(data):
     print(' in handle_message')
-    for user in active_users.values():
-        print('users in active_users.values()', user['username'])
     username_from_frontend = data.get('username','')
     msg = data.get('msg',"").strip()
 
@@ -156,7 +149,6 @@ def handle_message(data):
 
     print(f"Message from {username_from_frontend}: {msg}")
     emit('new_message',{'system': False, 'username':username_from_frontend, 'msg':msg}, broadcast=True)
-
 
 @socketio.on('connect')
 def handle_connect():
@@ -232,11 +224,12 @@ def handle_disconnect():
                 active_users.pop(user_id)
                 emit('user_left', {'system': True, 'msg': f"{username} left the chat"}, broadcast=True)
                 print(f"User {username} ({user_id}) disconnected from active users!")
+                print(active_users)
             break
 
     # Manually disconnect the socket session
-    disconnect()
-    print(f"Manually disconnected socket for SID {request.sid}")
+    # disconnect()
+    # print(f"Manually disconnected socket for SID {request.sid}")
 
 
 if __name__ == '__main__':

@@ -16,6 +16,10 @@ class Config:
     if not JWT_SECRET_KEY:
         raise RuntimeError("JWT_SECRET_KEY environment variable is not set. Exiting...")
 
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "openai_api_key")
+    if not OPENAI_API_KEY:
+        raise RuntimeError("OPENAI_API_KEY environment variable is not set. Exiting...")
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = True
     SOCKETIO_CORS_ALLOWED_ORIGINS = "*"

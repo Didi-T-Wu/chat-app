@@ -106,21 +106,38 @@ def register():
         app.logger.error(f"Error registering user: {str(e)}")
         return {"msg": f"Error registering user: {str(e)}"}, 500
 
-# @app.route('/api/logout', methods=['POST'])
-# def logout():
-#     data = request.json
-#     username = data.get("username")
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    data = request.json
+    username = data.get("username")
+    sid = data.get("sid")
 
-#     print('username from /api/logout', username)
-#     if not username:
-#         return {"msg": "Missing username"}, 400
-#     return { "msg": "User logout successfully"}, 200
+    print('username from /api/logout', username)
+    print('sid from /api/logout', sid)
+    if not username:
+        return {"msg": "Missing username"}, 400
+
+    for user_id, data in active_users.items():
+        if sid in data['session_ids']:
+            data['session_ids'].remove(sid)
+
+            if not data['session_ids']:
+                username = data['username']
+                active_users.pop(user_id)
+            break
+    return {"msg": "logout successful"}
+
+@socketio.on('logout')
+def handle_logout():
+    print('socket logout')
+    # Manually disconnect the socket session
+    disconnect(request.sid)
 
 
 
 @socketio.on('message')
 def handle_message(data):
-    print(' in handle_message')
+    print('in handle_message')
     username_from_frontend = data.get('username','')
     msg = data.get('msg',"").strip()
 
@@ -146,9 +163,20 @@ def handle_message(data):
         db.session.rollback() # Undo the changes made during this session
         emit('error', {'msg': 'Failed to store message'}, to=request.sid)
         return
+#################################
+    dt = new_msg.created_at
+    formatted_dt = dt.strftime("%Y-%m-%d %I:%M %p")
 
+
+    print('new_msg created_at', new_msg.created_at)
+    # print('active users',active_users)
     print(f"Message from {username_from_frontend}: {msg}")
-    emit('new_message',{'system': False, 'username':username_from_frontend, 'msg':msg}, broadcast=True)
+    emit('new_message',{
+        'system': False,
+        'username':username_from_frontend,
+        'msg':msg,
+        'timeStamp':formatted_dt
+        }, broadcast=True )
 
 @socketio.on('connect')
 def handle_connect():

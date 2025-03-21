@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useContext, useMemo } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { io } from "socket.io-client";
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
 import { AuthContext } from "../context/AuthContext";
+import Message from "./ui/myUI/myMessage";
 
 const Chat = () => {
   const [message, setMessage] = useState("");
@@ -28,8 +29,16 @@ const Chat = () => {
 
     console.log('Initializing socket connection...');
     const timeoutId = setTimeout(()=> {
-     const newSocket = io(API_BASE_URL, { query: { token } });
+     const newSocket = io(API_BASE_URL, { query: { token }});
      setSocket(newSocket); // Save socket instance to state
+
+     newSocket.on('connect', () => {
+      const sid = newSocket.id; // Get the WebSocket session ID
+      console.log("Connected with SID:", sid);
+
+      // store this `sid` in sessionStorage or state for later use
+      sessionStorage.setItem('sid', sid);
+    });
 
       newSocket.on("new_message", (data) => {
         console.log('on new_message');
@@ -57,7 +66,7 @@ const Chat = () => {
       newSocket.disconnect();
       setSocket(null);
     }
-  }, 100);
+  }, 500);
     return () => clearTimeout(timeoutId);
   }, [token]);
 
@@ -71,24 +80,48 @@ const Chat = () => {
 
   const handleLogout = () => {
     console.log('Logging out...');
-    // if (socket) {
-    //   console.log('Disconnecting socket during logout...');
-      // socket.disconnect();
-    // }
-    logout(tabId);
+    logout(tabId, sessionStorage.getItem('sid'));
+    console.log('socket',socket)
+    if(socket){
+      console.log('emit logout')
+      // socket.emit('logout')
+      setSocket(null)
+    }
     navigate('/home')
     console.log('Logout complete');
+
   };
 
   return (
     <div>
       <h2>Chat</h2>
-      <div style={{ border: "1px solid black", padding: "10px", height: "200px", overflowY: "scroll" }}>
+      <div style={{ border: "1px solid black", padding: "10px", height: "500px", overflowY: "scroll" }}>
         {messages.map((data, index) => (
           data.system ? (
-            <strong key={index}><p>{data.msg}</p></strong>
+            <strong key={index}><p style={{textAlign:"center"}}>{data.msg}</p></strong>
           ) : (
-            <p key={index}><strong>{data.username}</strong> says: {data.msg}</p>
+            data.username === curUser?(
+             <Message
+                username={curUser}
+                message = {data.msg}
+                bgColor='gray.100'
+                textColor='black'
+                alignMessageTo='flex-end'
+                timeStamp={data.timeStamp}
+              />
+            ):(
+              <Message
+              username={data.username}
+              message = {data.msg}
+              bgColor='teal.300'
+              textColor='while'
+              alignMessageTo='flex-start'
+              timeStamp={data.timeStamp}
+            />
+
+            )
+            // <p style={{textAlign:data.username === curUser?"right":"left"}} key={index}>
+            //   <strong>{data.username}</strong> says: {data.msg} <span>{data.time_stamp}</span></p>
           )
         ))}
       </div>

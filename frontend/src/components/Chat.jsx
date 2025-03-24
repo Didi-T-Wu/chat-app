@@ -120,8 +120,6 @@ const Chat = () => {
             />
 
             )
-            // <p style={{textAlign:data.username === curUser?"right":"left"}} key={index}>
-            //   <strong>{data.username}</strong> says: {data.msg} <span>{data.time_stamp}</span></p>
           )
         ))}
       </div>

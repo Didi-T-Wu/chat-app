@@ -2,6 +2,7 @@ import { Flex, Avatar, HStack, Stack, Text, Box } from "@chakra-ui/react"
 
 const Message = ({username, message, avatar, bgColor,textColor, timeStamp, alignMessageTo}) => {
     // TODO: randomly choose avatar color
+    // TODO: timestamp for different locale
 
     return(
         <Flex justify={alignMessageTo} >

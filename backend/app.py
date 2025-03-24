@@ -1,5 +1,5 @@
 from flask import Flask, request
-from flask_socketio import SocketIO, emit, disconnect
+from flask_socketio import SocketIO, emit,send, disconnect, join_room, leave_room
 from flask_cors import CORS
 from flask_migrate import Migrate  # Import Flask-Migrate
 from config import Config
@@ -127,12 +127,43 @@ def logout():
             break
     return {"msg": "logout successful"}
 
+############socket##################
+
+
 @socketio.on('logout')
 def handle_logout():
     print('socket logout')
     # Manually disconnect the socket session
     disconnect(request.sid)
 
+
+@socketio.on('join')
+def on_join(data):
+    username = data['username']
+    room = data['room']
+    join_room(room)
+    print(username + f' has entered room {room}')
+    emit('join_room', {
+                    'system': True,
+                    'username': username,
+                    'msg': f"{username} joined room {room}",
+                    'room':room
+
+                }, to=room)
+
+@socketio.on('leave')
+def on_leave(data):
+    username = data['username']
+    room = data['room']
+    leave_room(room)
+    print(username + f' has left room {room}')
+    emit('leave_room', {
+                    'system': True,
+                    'username': username,
+                    'msg': f"{username} left room {room}, back to main",
+
+                }, broadcast=True)
+##TODO: need 'back to main ' event
 
 
 @socketio.on('message')
@@ -163,7 +194,7 @@ def handle_message(data):
         db.session.rollback() # Undo the changes made during this session
         emit('error', {'msg': 'Failed to store message'}, to=request.sid)
         return
-#################################
+    ## TODO: set time format, need to be local time for the user
     dt = new_msg.created_at
     formatted_dt = dt.strftime("%Y-%m-%d %I:%M %p")
 

@@ -17,8 +17,8 @@ const Chat = () => {
   const { curUser, tabId, logout, token } = useContext(AuthContext);
 
   ///////////////////////////////////////
-  const [curRoom, setCurRoom] = useState('main')
-  const [roomNum, setRoomNum] = useState(0)
+  const [curRoom, setCurRoom] = useState(sessionStorage.getItem('curRoom') || 'main')
+  const [activeRooms, setActiveRooms] = useState([])
 
   ///////////////////////////////////////
 
@@ -58,11 +58,13 @@ const Chat = () => {
       newSocket.on("user_joined", (data) => {
         console.log("on user_joined", data);
         setMessages((prevMessages) => [...prevMessages, data]);
+        setActiveRooms(data.rooms)
       });
 
       newSocket.on("user_left", (data) => {
         console.log("on user_left", data);
         setMessages((prevMessages) => [...prevMessages, data]);
+        setActiveRooms(data.rooms)
       });
 ////////////////////////////////////////
       newSocket.on("join_room", (data) => {
@@ -70,16 +72,25 @@ const Chat = () => {
         // if room == main, broadcast to all
         // otherwise to room
         // clear prev messages
+        sessionStorage.setItem('curRoom', data.room)
         setMessages(() => [data]);
         setCurRoom(data.room)
+        setActiveRooms(data.rooms)
       });
 
       newSocket.on("leave_room", (data) => {
         console.log("on leave room", data);
         setMessages((prevMessages) => [...prevMessages, data]);
+        setActiveRooms(data.rooms)
         // if room == main, broadcast to all
         // otherwise to room
       });
+
+      newSocket.on('update_rooms', (data)=>{
+        console.log("on update rooms", data);
+        setActiveRooms(data.rooms)
+
+      })
 /////////////////////////////////////////////////
       newSocket.on("auth_error", (err) => {
         console.log("in auth_err", err.msg);
@@ -107,12 +118,14 @@ const Chat = () => {
   const handleLogout = () => {
     console.log('Logging out...');
     logout(tabId, sessionStorage.getItem('sid'));
+    socket.emit('leave', { username:curUser, room:curRoom })
     console.log('socket',socket)
     if(socket){
       console.log('emit logout')
       // socket.emit('logout')
       setSocket(null)
     }
+    sessionStorage.setItem('curRoom','')
     navigate('/home')
     console.log('Logout complete');
 
@@ -125,16 +138,27 @@ const Chat = () => {
     // increment room number
     // enter new room and leave current room
 
-    const newRoomNumber = Number(roomNum)+1
-    setRoomNum(newRoomNumber)
-    socket.emit('join', { username:curUser, room:`room ${newRoomNumber}`})
+
     socket.emit('leave', { username:curUser, room:curRoom})
+    socket.emit('join', { username:curUser, room:''})
+    socket.emit('update')
+
 
   }
 
   const handleLeaveRoom = () => {
     console.log('leave a room, back to main')
-    socket.emit('leave', {username:curUser, room:'main'})
+    socket.emit('leave', {username:curUser, room:curRoom})
+    socket.emit('join', { username:curUser, room:'main'})
+    socket.emit('update')
+
+  }
+
+  const handleSwitchRoom= (room) => {
+    console.log('leave current room to other room')
+    socket.emit('leave', {username:curUser, room:curRoom})
+    socket.emit('join', { username:curUser, room:room})
+    socket.emit('update')
 
   }
   /////////////////////
@@ -188,6 +212,12 @@ const Chat = () => {
       <button onClick={handleCreateAndJoinRoom}>Create Room</button>
       <br/>
       <button onClick={handleLeaveRoom}>Leave</button>
+       <ul>
+        {activeRooms.map((room, index)=>{
+         return <li key={index}><button onClick={()=> handleSwitchRoom(room)}>{room}</button></li>
+        })}
+        </ul>
+
     </div>
   );
 };

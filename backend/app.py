@@ -27,6 +27,10 @@ active_users = {} # Tracks logged in  users
 # }
 # prevent duplicates by tracking active users with user_id instead of request.sid.
 
+rooms = {} # Tracks active rooms with users in it
+# rooms[room_name] = [username1, username2]
+room_number = 1  # given room number starting from 1
+
 @app.route('/')
 def index():
     return "Flask Backend Running"
@@ -38,6 +42,7 @@ def get_active_users():
         active_usernames.append(data['username'])
     print('active_usernames',active_usernames)
     return active_usernames, 200
+
 
 
 @app.route('/api/login', methods=['POST'])
@@ -128,7 +133,8 @@ def logout():
     return {"msg": "logout successful"}
 
 ############socket##################
-
+def increment_room_number(num):
+    return num+1
 
 @socketio.on('logout')
 def handle_logout():
@@ -141,6 +147,12 @@ def handle_logout():
 def on_join(data):
     username = data['username']
     room = data['room']
+    global room_number
+    if not room:
+        print('no room sent')
+        room = f'room {room_number}'
+    room_number +=1
+
     join_room(room)
     print(username + f' has entered room {room}')
     if room == 'main':
@@ -148,15 +160,21 @@ def on_join(data):
                     'system': True,
                     'username': username,
                     'msg': f"{username} joined room {room}",
-                    'room':room
+                    'room':room,
+                    'rooms':room_list()
 
                 }, broadcast=True)
     else:
+        if not (room in rooms):
+            rooms[room] = [username]
+        else:
+            rooms[room].append(username)
         emit('join_room', {
                     'system': True,
                     'username': username,
                     'msg': f"{username} joined room {room}",
-                    'room':room
+                    'room':room,
+                    'rooms': room_list()
 
                 }, to=room)
 
@@ -165,20 +183,39 @@ def on_leave(data):
     username = data['username']
     room = data['room']
     leave_room(room)
+
     print(username + f' has left room {room}')
     if room =='main':
         emit('leave_room', {
                     'system': True,
                     'username': username,
                     'msg': f"{username} left room {room}",
+                    'room':room,
+                    'rooms':room_list()
                 }, broadcast=True)
     else:
+        if username in rooms[room]:
+            rooms[room].remove(username)
+            print('users left in the room', rooms[room] )
+            if not len(rooms[room]):
+
+                del rooms[room]
+
         emit('leave_room', {
                     'system': True,
                     'username': username,
                     'msg': f"{username} left room {room}",
+                    'room':room,
+                    'rooms':room_list()
                 }, to=room)
 
+def room_list():
+    print('active rooms', rooms.keys())
+    return list(rooms.keys())
+
+@socketio.on('update')
+def update_rooms():
+    emit('update_rooms', {'rooms': room_list()}, broadcast=True)
 ############################################################
 @socketio.on('message')
 def handle_message(data):
@@ -261,7 +298,9 @@ def handle_connect():
                 emit('user_joined', {
                     'system': True,
                     'username': user.username,
-                    'msg': f"{user.username} joined the chat"
+                    'msg': f"{user.username} joined the chat",
+                    'rooms':room_list()
+
                 }, broadcast=True)
         else:
             emit('auth_error', {'msg': 'Invalid token, user not found'}, to=request.sid)
@@ -295,7 +334,11 @@ def handle_disconnect():
             if not data['session_ids']:
                 username = data['username']
                 active_users.pop(user_id)
-                emit('user_left', {'system': True, 'msg': f"{username} left the chat"}, broadcast=True)
+                emit('user_left', {
+                    'system': True,
+                    'msg': f"{username} left the chat",
+                    'rooms':room_list()
+                    }, broadcast=True)
                 print(f"User {username} ({user_id}) disconnected from active users!")
                 print(active_users)
             break

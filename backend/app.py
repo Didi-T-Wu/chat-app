@@ -136,14 +136,23 @@ def handle_logout():
     # Manually disconnect the socket session
     disconnect(request.sid)
 
-
+## TODO: send room users to front
 @socketio.on('join')
 def on_join(data):
     username = data['username']
     room = data['room']
     join_room(room)
     print(username + f' has entered room {room}')
-    emit('join_room', {
+    if room == 'main':
+        emit('join_room', {
+                    'system': True,
+                    'username': username,
+                    'msg': f"{username} joined room {room}",
+                    'room':room
+
+                }, broadcast=True)
+    else:
+        emit('join_room', {
                     'system': True,
                     'username': username,
                     'msg': f"{username} joined room {room}",
@@ -157,15 +166,20 @@ def on_leave(data):
     room = data['room']
     leave_room(room)
     print(username + f' has left room {room}')
-    emit('leave_room', {
+    if room =='main':
+        emit('leave_room', {
                     'system': True,
                     'username': username,
-                    'msg': f"{username} left room {room}, back to main",
-
+                    'msg': f"{username} left room {room}",
                 }, broadcast=True)
-##TODO: need 'back to main ' event
+    else:
+        emit('leave_room', {
+                    'system': True,
+                    'username': username,
+                    'msg': f"{username} left room {room}",
+                }, to=room)
 
-
+############################################################
 @socketio.on('message')
 def handle_message(data):
     print('in handle_message')

@@ -67,16 +67,18 @@ const Chat = () => {
 ////////////////////////////////////////
       newSocket.on("join_room", (data) => {
         console.log("on joined room", data);
+        // if room == main, broadcast to all
+        // otherwise to room
+        // clear prev messages
         setMessages(() => [data]);
-
-        setRoomNum(`${data.room}`)
-        setCurRoom(`Room ${data.room}`)
+        setCurRoom(data.room)
       });
 
       newSocket.on("leave_room", (data) => {
-        console.log("leave room back to main", data);
-        setMessages(() => [data]);
-        setCurRoom(()=> 'main')
+        console.log("on leave room", data);
+        setMessages((prevMessages) => [...prevMessages, data]);
+        // if room == main, broadcast to all
+        // otherwise to room
       });
 /////////////////////////////////////////////////
       newSocket.on("auth_error", (err) => {
@@ -119,9 +121,14 @@ const Chat = () => {
   ///////////////////
   const handleCreateAndJoinRoom = () => {
     console.log('create and join a room')
-    //TODO: create a room name
+    //TODO: user can create a room name
+    // increment room number
+    // enter new room and leave current room
+
     const newRoomNumber = Number(roomNum)+1
-    socket.emit('join', {username:curUser, room:newRoomNumber})
+    setRoomNum(newRoomNumber)
+    socket.emit('join', { username:curUser, room:`room ${newRoomNumber}`})
+    socket.emit('leave', { username:curUser, room:curRoom})
 
   }
 
@@ -142,6 +149,7 @@ const Chat = () => {
           ) : (
             data.username === curUser?(
              <Message
+                key={index}
                 username={curUser}
                 message = {data.msg}
                 bgColor='gray.100'
@@ -151,6 +159,7 @@ const Chat = () => {
               />
             ):(
               <Message
+              key={index}
               username={data.username}
               message = {data.msg}
               bgColor='teal.300'

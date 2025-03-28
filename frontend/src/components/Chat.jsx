@@ -4,6 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
 import { AuthContext } from "../context/AuthContext";
 import Message from "./ui/myUI/myMessage";
+import Profile from "./ui/myUI/myProfile";
+import { Flex, Box, Button, VStack, Text, Input, Textarea, Float, IconButton, Circle} from "@chakra-ui/react";
+import { MdMeetingRoom } from "react-icons/md";
+import { IoSend } from "react-icons/io5";
+import { BsSend } from "react-icons/bs";
+
 // now I create room, room will be created, room name is number by ascending order
 // leave room will leave curRoom and back to main
 //TODO:  later, sidebar will show rooms with people there,
@@ -11,14 +17,18 @@ import Message from "./ui/myUI/myMessage";
 // not returning to main
 const Chat = () => {
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([]);
+
   const [socket, setSocket] = useState(null); // Store socket in state
   const navigate = useNavigate();
   const { curUser, tabId, logout, token } = useContext(AuthContext);
 
   ///////////////////////////////////////
-  const [curRoom, setCurRoom] = useState(sessionStorage.getItem('curRoom') || 'main')
+  const DefaultRoom = 'main'
+  const [curRoom, setCurRoom] = useState(sessionStorage.getItem('curRoom') ||  DefaultRoom)
   const [activeRooms, setActiveRooms] = useState([])
+  const [messages, setMessages] = useState(() => {
+    return JSON.parse(sessionStorage.getItem("messages")) || [];
+  });
 
   ///////////////////////////////////////
 
@@ -52,19 +62,25 @@ const Chat = () => {
 
       newSocket.on("new_message", (data) => {
         console.log('on new_message');
+        console.log('messages from new_message',messages)
+        console.log('messages after adding  new message', [...messages, data])
+        const messagesForStorage = [...messages, data]
+        sessionStorage.setItem('messages', JSON.stringify( messagesForStorage))
         setMessages((prevMessages) => [...prevMessages, data]);
+
       });
 
       newSocket.on("user_joined", (data) => {
         console.log("on user_joined", data);
         setMessages((prevMessages) => [...prevMessages, data]);
-        setActiveRooms(data.rooms)
       });
 
       newSocket.on("user_left", (data) => {
         console.log("on user_left", data);
+        newSocket.emit('manually_clean_up_user_in_room', { username:curUser, room:curRoom })
+        newSocket.emit('update')
         setMessages((prevMessages) => [...prevMessages, data]);
-        setActiveRooms(data.rooms)
+
       });
 ////////////////////////////////////////
       newSocket.on("join_room", (data) => {
@@ -73,17 +89,13 @@ const Chat = () => {
         // otherwise to room
         // clear prev messages
         sessionStorage.setItem('curRoom', data.room)
-        setMessages(() => [data]);
+        setMessages((prevMessages) => [...prevMessages, data]);
         setCurRoom(data.room)
-        setActiveRooms(data.rooms)
       });
 
       newSocket.on("leave_room", (data) => {
         console.log("on leave room", data);
         setMessages((prevMessages) => [...prevMessages, data]);
-        setActiveRooms(data.rooms)
-        // if room == main, broadcast to all
-        // otherwise to room
       });
 
       newSocket.on('update_rooms', (data)=>{
@@ -110,7 +122,7 @@ const Chat = () => {
   const sendMessage = (e) => {
     e.preventDefault();
     if (message.trim() && socket) {
-      socket.emit('message', { msg: message, username: curUser });
+      socket.emit('message', { msg: message, username: curUser, room:curRoom });
       setMessage("");
     }
   };
@@ -119,13 +131,15 @@ const Chat = () => {
     console.log('Logging out...');
     logout(tabId, sessionStorage.getItem('sid'));
     socket.emit('leave', { username:curUser, room:curRoom })
+    socket.emit('update')
     console.log('socket',socket)
     if(socket){
       console.log('emit logout')
       // socket.emit('logout')
-      setSocket(null)
+      // setSocket(null)
     }
     sessionStorage.setItem('curRoom','')
+    sessionStorage.setItem('messages',JSON.stringify([]))
     navigate('/home')
     console.log('Logout complete');
 
@@ -149,7 +163,7 @@ const Chat = () => {
   const handleLeaveRoom = () => {
     console.log('leave a room, back to main')
     socket.emit('leave', {username:curUser, room:curRoom})
-    socket.emit('join', { username:curUser, room:'main'})
+    socket.emit('join', { username:curUser, room: DefaultRoom})
     socket.emit('update')
 
   }
@@ -162,62 +176,104 @@ const Chat = () => {
 
   }
   /////////////////////
+  const renderMessage = (data, index, curRoom, curUser) =>{
+    console.log('renderMessage called')
+
+    if(data.room !== curRoom) return;
+
+    if(data.system){
+      return (<strong key={index}><p style={{textAlign:"center"}}>{data.msg}</p></strong>)
+    }
+
+    return (<Message
+                key={index}
+                username={data.username === curUser? curUser: data.username}
+                displayName={data.username === curUser? "you": data.username}
+                message = {data.msg}
+                bgColor={data.username === curUser?'gray.100':'teal.300'}
+                textColor={data.username === curUser?'black':'black'}
+                alignMessageTo={data.username === curUser?'flex-end':'flex-start'}
+                timeStamp={data.timeStamp}
+            />)
+  }
+
+  const renderMessages = (messages, curRoom, curUser) => {
+    console.log('renderMessages called')
+    return messages.map((data, index)=> (renderMessage(data, index, curRoom,curUser)))
+  }
+
+  const renderRooms = (activeRooms) => {
+    return activeRooms.map((room, index) => {
+      return (
+        <Button key={index} onClick={()=> handleSwitchRoom(room)}>
+            <MdMeetingRoom/>{room}
+        </Button>)
+    })
+  }
+
+  ///////
 
   return (
-    <div>
-      <h2>Room : {curRoom}</h2>
-      <div style={{ border: "1px solid black", padding: "10px", height: "500px", overflowY: "scroll" }}>
-        {messages.map((data, index) => (
-          data.system ? (
-            <strong key={index}><p style={{textAlign:"center"}}>{data.msg}</p></strong>
-          ) : (
-            data.username === curUser?(
-             <Message
-                key={index}
-                username={curUser}
-                message = {data.msg}
-                bgColor='gray.100'
-                textColor='black'
-                alignMessageTo='flex-end'
-                timeStamp={data.timeStamp}
-              />
-            ):(
-              <Message
-              key={index}
-              username={data.username}
-              message = {data.msg}
-              bgColor='teal.300'
-              textColor='while'
-              alignMessageTo='flex-start'
-              timeStamp={data.timeStamp}
-            />
-
-            )
-          )
-        ))}
-      </div>
-      <form onSubmit={sendMessage}>
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type a message..."
-        />
-        <button type="submit" disabled={!message.trim()}>
-          Send
-        </button>
-      </form>
-      <button onClick={handleLogout}>Logout</button>
-      <br/>
-      <button onClick={handleCreateAndJoinRoom}>Create Room</button>
-      <br/>
-      <button onClick={handleLeaveRoom}>Leave</button>
-       <ul>
-        {activeRooms.map((room, index)=>{
-         return <li key={index}><button onClick={()=> handleSwitchRoom(room)}>{room}</button></li>
-        })}
-        </ul>
-
+    <div >
+      <Flex p="5" h="80%" gap="5">
+        <Flex direction="column" gap="4"  w="40lvh" justify="space-between">
+          <Button onClick={handleLogout}>Logout</Button>
+          <Profile username={curUser}/>
+          <Flex direction="column">
+            {renderRooms(activeRooms)}
+          </Flex>
+          <Button onClick={handleCreateAndJoinRoom}>Create Room</Button>
+        </Flex>
+        <Flex
+            direction="column"
+            w="60lvh"
+            bgGradient="to-r"
+            gradientFrom="yellow.100"
+            gradientTo="blue.100"
+            rounded="xl"
+        >
+          <Flex justify="flex-end" >
+            <Box
+              bg='teal'
+              width="100%"
+            >
+               <Text textAlign="center">{curRoom}</Text>
+            </Box>
+            <Button onClick={handleLeaveRoom}>Leave</Button>
+          </Flex>
+          <Box
+            height="600px"
+            overflowY= "scroll"
+          >
+            {renderMessages(messages, curRoom, curUser)}
+          </Box>
+          <form onSubmit={sendMessage}>
+              <Box position="relative">
+                <Input
+                  type="text"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Type a message..."
+                  variant="subtle"
+                  rounded="xl"
+                />
+                <Float offsetY="5" offsetX="6">
+                  <IconButton
+                    aria-label="send message"
+                    type="submit"
+                    size="xs"
+                    variant="subtle"
+                    bg="blue.200"
+                    rounded="xl"
+                    disabled={!message.trim()}
+                  >
+                    <BsSend />
+                  </IconButton>
+                </Float>
+               </Box>
+          </form>
+        </Flex>
+      </Flex>
     </div>
   );
 };

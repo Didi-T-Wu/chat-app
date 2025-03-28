@@ -30,6 +30,7 @@ active_users = {} # Tracks logged in  users
 rooms = {} # Tracks active rooms with users in it
 # rooms[room_name] = [username1, username2]
 room_number = 1  # given room number starting from 1
+DEFAULT_ROOM = 'main'
 
 @app.route('/')
 def index():
@@ -155,28 +156,18 @@ def on_join(data):
 
     join_room(room)
     print(username + f' has entered room {room}')
-    if room == 'main':
-        emit('join_room', {
-                    'system': True,
-                    'username': username,
-                    'msg': f"{username} joined room {room}",
-                    'room':room,
-                    'rooms':room_list()
-
-                }, broadcast=True)
+    if not (room in rooms):
+        rooms[room] = [username]
     else:
-        if not (room in rooms):
-            rooms[room] = [username]
-        else:
-            rooms[room].append(username)
-        emit('join_room', {
-                    'system': True,
-                    'username': username,
-                    'msg': f"{username} joined room {room}",
-                    'room':room,
-                    'rooms': room_list()
+        rooms[room].append(username)
 
-                }, to=room)
+    emit('join_room', {
+            'system': True,
+            'username': username,
+            'msg': f"{username} joined room {room}",
+            'room':room,
+            }, to=room)
+
 
 @socketio.on('leave')
 def on_leave(data):
@@ -185,33 +176,32 @@ def on_leave(data):
     leave_room(room)
 
     print(username + f' has left room {room}')
-    if room =='main':
-        emit('leave_room', {
-                    'system': True,
-                    'username': username,
-                    'msg': f"{username} left room {room}",
-                    'room':room,
-                    'rooms':room_list()
-                }, broadcast=True)
-    else:
-        if username in rooms[room]:
-            rooms[room].remove(username)
-            print('users left in the room', rooms[room] )
-            if not len(rooms[room]):
+    clean_up_user_in_room(username, room)
 
-                del rooms[room]
-
-        emit('leave_room', {
-                    'system': True,
-                    'username': username,
-                    'msg': f"{username} left room {room}",
-                    'room':room,
-                    'rooms':room_list()
-                }, to=room)
+    emit('leave_room', {
+            'system': True,
+            'username': username,
+            'msg': f"{username} left room {room}",
+            'room':room,
+            }, to=room)
 
 def room_list():
     print('active rooms', rooms.keys())
     return list(rooms.keys())
+
+def clean_up_user_in_room(username, room):
+    if room in rooms and username in rooms[room]:
+        rooms[room].remove(username)
+        if not len(rooms[room]):
+            del rooms[room]
+
+@socketio.on('manually_clean_up_user_in_room')
+def manually_clean_up_user_in_room(data):
+    username = data['username']
+    room = data['room']
+
+    clean_up_user_in_room(username, room)
+
 
 @socketio.on('update')
 def update_rooms():
@@ -222,6 +212,7 @@ def handle_message(data):
     print('in handle_message')
     username_from_frontend = data.get('username','')
     msg = data.get('msg',"").strip()
+    room = data['room']
 
     if not username_from_frontend or not msg:
         emit('error', {'msg': 'Invalid user or empty message'}, to=request.sid)
@@ -257,8 +248,9 @@ def handle_message(data):
         'system': False,
         'username':username_from_frontend,
         'msg':msg,
-        'timeStamp':formatted_dt
-        }, broadcast=True )
+        'timeStamp':formatted_dt,
+        'room':room
+        }, to=room )
 
 @socketio.on('connect')
 def handle_connect():
@@ -269,7 +261,7 @@ def handle_connect():
     #if no token, emit an error and disconnect the user
     if not token:
         emit('auth_error', {'msg': 'No token provided'}, to=request.sid)
-        socketio.disconnect(request.sid)  # Force disconnect
+        disconnect(request.sid)  # Force disconnect
         return
 
     try:
@@ -285,6 +277,12 @@ def handle_connect():
 
         if user:
             username = user.username
+            # every user goes to default room : main
+            join_room(DEFAULT_ROOM)
+            # update room list
+            rooms[DEFAULT_ROOM] = [username]
+
+            # update active users
             if user.id in active_users:
                 active_users[user.id]['session_ids'].append(request.sid)
                 print(f"Authenticated user {username} connected again with session {request.sid}")
@@ -299,9 +297,10 @@ def handle_connect():
                     'system': True,
                     'username': user.username,
                     'msg': f"{user.username} joined the chat",
-                    'rooms':room_list()
+                    'room':DEFAULT_ROOM
+                }, to=DEFAULT_ROOM)
 
-                }, broadcast=True)
+            emit('update_rooms', {'rooms': room_list()}, broadcast=True)
         else:
             emit('auth_error', {'msg': 'Invalid token, user not found'}, to=request.sid)
             disconnect(request.sid)
@@ -329,6 +328,10 @@ def handle_disconnect():
     print('A user disconnected')
 
     for user_id, data in active_users.items():
+        # update room list
+        # username = data['username']
+
+        # update active users
         if request.sid in data['session_ids']:
             data['session_ids'].remove(request.sid)
             if not data['session_ids']:
@@ -336,8 +339,7 @@ def handle_disconnect():
                 active_users.pop(user_id)
                 emit('user_left', {
                     'system': True,
-                    'msg': f"{username} left the chat",
-                    'rooms':room_list()
+                    'msg': f"{username} left the app",
                     }, broadcast=True)
                 print(f"User {username} ({user_id}) disconnected from active users!")
                 print(active_users)

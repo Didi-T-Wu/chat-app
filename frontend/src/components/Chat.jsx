@@ -7,8 +7,8 @@ import Message from "./ui/myUI/myMessage";
 import Profile from "./ui/myUI/myProfile";
 import { Flex, Box, Button, VStack, Text, Input, Textarea, Float, IconButton, Circle} from "@chakra-ui/react";
 import { MdMeetingRoom } from "react-icons/md";
-import { IoSend } from "react-icons/io5";
 import { BsSend } from "react-icons/bs";
+import SelectWithinPopover from "./ui/myUI/mySelectWithinPopover";
 
 // now I create room, room will be created, room name is number by ascending order
 // leave room will leave curRoom and back to main
@@ -25,12 +25,16 @@ const Chat = () => {
   ///////////////////////////////////////
   const DefaultRoom = 'main'
   const [curRoom, setCurRoom] = useState(sessionStorage.getItem('curRoom') ||  DefaultRoom)
-  const [activeRooms, setActiveRooms] = useState([])
   const [messages, setMessages] = useState(() => {
     return JSON.parse(sessionStorage.getItem("messages")) || [];
   });
 
-  ///////////////////////////////////////
+  ///////////////////////////////////////2025/3/30
+  const [publicRooms, setPublicRooms] = useState([]);
+  const [privateRooms, setPrivateRooms] = useState([]);
+  const [isPrivate, setIsPrivate] = useState(false);
+
+  ///////////////////////////////////
 
   // Handle Authentication (Token validation and Navigation)
   useEffect(() => {
@@ -100,7 +104,8 @@ const Chat = () => {
 
       newSocket.on('update_rooms', (data)=>{
         console.log("on update rooms", data);
-        setActiveRooms(data.rooms)
+        setPublicRooms(data.public_rooms)
+        setPrivateRooms(data.private_rooms)
 
       })
 /////////////////////////////////////////////////
@@ -153,8 +158,8 @@ const Chat = () => {
     // enter new room and leave current room
 
 
-    socket.emit('leave', { username:curUser, room:curRoom})
-    socket.emit('join', { username:curUser, room:''})
+    socket.emit('leave', { username:curUser, room:curRoom, })
+    socket.emit('join', { username:curUser, room:'', isPrivate:isPrivate})
     socket.emit('update')
 
 
@@ -202,14 +207,30 @@ const Chat = () => {
     return messages.map((data, index)=> (renderMessage(data, index, curRoom,curUser)))
   }
 
-  const renderRooms = (activeRooms) => {
-    return activeRooms.map((room, index) => {
+  const renderPublicRooms = (publicRooms) => {
+    return publicRooms.map((room, index) => {
       return (
         <Button key={index} onClick={()=> handleSwitchRoom(room)}>
             <MdMeetingRoom/>{room}
         </Button>)
     })
   }
+
+  const renderPrivateRooms = (privateRooms) => {
+    return privateRooms.map((room, index) => {
+      return (
+        <Button key={index} onClick={()=> handleSwitchRoom(room)}>
+            <MdMeetingRoom/>{room}
+        </Button>)
+    })
+  }
+
+  const onHandleRoomPrivacyChange = (selectedItems) => {
+    const valArray= selectedItems.value
+    console.log("in chat, privacy", isPrivate);
+    handleCreateAndJoinRoom()
+    setIsPrivate(valArray[0]);
+  };
 
   ///////
 
@@ -220,9 +241,10 @@ const Chat = () => {
           <Button onClick={handleLogout}>Logout</Button>
           <Profile username={curUser}/>
           <Flex direction="column">
-            {renderRooms(activeRooms)}
+            {/* TODO: render public rooms and private rooms */}
+            {renderPublicRooms(publicRooms)}
           </Flex>
-          <Button onClick={handleCreateAndJoinRoom}>Create Room</Button>
+          <SelectWithinPopover onChange={onHandleRoomPrivacyChange}/>
         </Flex>
         <Flex
             direction="column"
@@ -230,21 +252,14 @@ const Chat = () => {
             bgGradient="to-r"
             gradientFrom="yellow.100"
             gradientTo="blue.100"
-            rounded="xl"
-        >
-          <Flex justify="flex-end" >
-            <Box
-              bg='teal'
-              width="100%"
-            >
+            rounded="xl">
+          <Flex justify="flex-end">
+            <Box bg='teal' width="100%">
                <Text textAlign="center">{curRoom}</Text>
             </Box>
             <Button onClick={handleLeaveRoom}>Leave</Button>
           </Flex>
-          <Box
-            height="600px"
-            overflowY= "scroll"
-          >
+          <Box height="600px" overflowY= "scroll">
             {renderMessages(messages, curRoom, curUser)}
           </Box>
           <form onSubmit={sendMessage}>
@@ -255,8 +270,7 @@ const Chat = () => {
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Type a message..."
                   variant="subtle"
-                  rounded="xl"
-                />
+                  rounded="xl"/>
                 <Float offsetY="5" offsetX="6">
                   <IconButton
                     aria-label="send message"
@@ -265,14 +279,17 @@ const Chat = () => {
                     variant="subtle"
                     bg="blue.200"
                     rounded="xl"
-                    disabled={!message.trim()}
-                  >
-                    <BsSend />
+                    disabled={!message.trim()}>
+                      <BsSend />
                   </IconButton>
                 </Float>
-               </Box>
+              </Box>
           </form>
         </Flex>
+        <Flex direction="column">
+            {/* TODO: render public rooms and private rooms */}
+            {renderPrivateRooms(privateRooms)}
+          </Flex>
       </Flex>
     </div>
   );

@@ -29,8 +29,13 @@ active_users = {} # Tracks logged in  users
 
 rooms = {} # Tracks active rooms with users in it
 # rooms[room_name] = [username1, username2]
-room_number = 1  # given room number starting from 1
 DEFAULT_ROOM = 'main'
+public_rooms = {DEFAULT_ROOM:[]}
+private_rooms = {}
+# rooms[room_name] = [username1, username2]
+
+room_number = 1  # given room number starting from 1
+
 
 @app.route('/')
 def index():
@@ -148,25 +153,34 @@ def handle_logout():
 def on_join(data):
     username = data['username']
     room = data['room']
+    is_private = data['isPrivate']
+
     global room_number
-    if not room:
+    if not room: # room was created for the first time
         print('no room sent')
         room = f'room {room_number}'
     room_number +=1
 
     join_room(room)
     print(username + f' has entered room {room}')
-    if not (room in rooms):
-        rooms[room] = [username]
+    if is_private:
+        if room in private_rooms:
+            private_rooms[room].append(username)
+        else:
+            private_rooms[room] = [username]
     else:
-        rooms[room].append(username)
+        if room in public_rooms:
+            public_rooms[room].append(username)
+        else:
+            public_rooms[room] = [username]
 
     emit('join_room', {
             'system': True,
             'username': username,
             'msg': f"{username} joined room {room}",
             'room':room,
-            }, to=room)
+            'is_private':is_private
+            }, room=room)
 
 
 @socketio.on('leave')
@@ -185,15 +199,27 @@ def on_leave(data):
             'room':room,
             }, to=room)
 
-def room_list():
-    print('active rooms', rooms.keys())
-    return list(rooms.keys())
+def public_room_list():
+    print('public rooms', public_rooms.keys())
+    return list(public_rooms.keys())
+
+def private_room_list():
+    print('private rooms', private_rooms.keys())
+    return list(private_rooms.keys())
+
+def public_room_with_users():
+    return public_rooms
+
+def private_room_with_users():
+    return private_rooms
+
+
 
 def clean_up_user_in_room(username, room):
-    if room in rooms and username in rooms[room]:
-        rooms[room].remove(username)
-        if not len(rooms[room]):
-            del rooms[room]
+    if room in public_rooms and username in public_rooms[room]:
+        public_rooms[room].remove(username)
+    elif room in private_rooms and username in private_rooms[room]:
+        private_rooms[room].remove(username)
 
 @socketio.on('manually_clean_up_user_in_room')
 def manually_clean_up_user_in_room(data):
@@ -205,7 +231,7 @@ def manually_clean_up_user_in_room(data):
 
 @socketio.on('update')
 def update_rooms():
-    emit('update_rooms', {'rooms': room_list()}, broadcast=True)
+    emit('update_rooms', {'public_rooms': public_room_list(), 'private_rooms':private_room_list()}, broadcast=True)
 ############################################################
 @socketio.on('message')
 def handle_message(data):
@@ -300,7 +326,7 @@ def handle_connect():
                     'room':DEFAULT_ROOM
                 }, to=DEFAULT_ROOM)
 
-            emit('update_rooms', {'rooms': room_list()}, broadcast=True)
+            emit('update_rooms', {'public_rooms': public_room_list(), 'private_rooms':private_room_list()}, broadcast=True)
         else:
             emit('auth_error', {'msg': 'Invalid token, user not found'}, to=request.sid)
             disconnect(request.sid)

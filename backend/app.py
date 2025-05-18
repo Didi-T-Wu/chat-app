@@ -8,6 +8,8 @@ from uuid import uuid4
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import create_access_token, decode_token, JWTManager
 from jwt import ExpiredSignatureError, InvalidTokenError
+import eventlet
+eventlet.monkey_patch()
 
 app = Flask(__name__)
 app.config.from_object(Config)

@@ -112,3 +112,4 @@ websocket-client==1.7.0
 Werkzeug==2.3.6
 widgetsnbextension==4.0.13
 WTForms==3.0.1
+gunicorn

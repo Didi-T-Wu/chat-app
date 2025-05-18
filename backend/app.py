@@ -387,5 +387,9 @@ def handle_disconnect():
     # print(f"Manually disconnected socket for SID {request.sid}")
 
 
+# if __name__ == '__main__':
+#     socketio.run(app, debug=True, host="localhost", port=5001)
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host="localhost", port=5001)
+    # Get the port from the config file
+    port = Config.PORT
+    socketio.run(app, debug=True, host="0.0.0.0", port=port)

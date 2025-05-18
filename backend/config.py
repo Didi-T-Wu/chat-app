@@ -1,8 +1,10 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+if os.getenv("FLASK_ENV") == "development":
+    load_dotenv()
 
+# Load environment variables from .env file if in development mode
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'default_secret_key')
     if not SECRET_KEY:
@@ -23,3 +25,6 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = True
     SOCKETIO_CORS_ALLOWED_ORIGINS = "*"
+
+    # Add port from environment variable, default to 5001 for local
+    PORT = int(os.getenv("PORT", 5001))  # Use the Render-assigned port or 5001 locally

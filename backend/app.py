@@ -208,9 +208,11 @@ def private_room_list():
     return list(private_rooms.keys())
 
 def public_room_with_users():
+    print('public rooms', public_rooms)
     return public_rooms
 
 def private_room_with_users():
+    print('private rooms',private_rooms)
     return private_rooms
 
 
@@ -231,7 +233,12 @@ def manually_clean_up_user_in_room(data):
 
 @socketio.on('update')
 def update_rooms():
-    emit('update_rooms', {'public_rooms': public_room_list(), 'private_rooms':private_room_list()}, broadcast=True)
+    emit('update_rooms', {
+        'public_rooms': public_room_list(),
+        'private_rooms':private_room_list(),
+        'public_rooms_with_users':public_room_with_users(),
+        'private_rooms_with_users': private_room_with_users()
+        }, broadcast=True)
 ############################################################
 @socketio.on('message')
 def handle_message(data):

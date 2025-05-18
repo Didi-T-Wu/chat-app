@@ -9,7 +9,7 @@ import {
 
 const SelectWithinPopover = ({onChange}) => {
   return (
-    <Popover.Root size="xs">
+    <Popover.Root size="xs"  closeOnSelect={true}>
       <Popover.Trigger asChild>
         <Button variant="outline" size="sm">
           Create a Room
@@ -26,6 +26,7 @@ const SelectWithinPopover = ({onChange}) => {
                 size="sm"
                 positioning={{ sameWidth: true, placement: "bottom" }}
                 onValueChange={onChange}
+                closeOnSelect={true}
               >
                 <Select.HiddenSelect />
                 <Select.Control>

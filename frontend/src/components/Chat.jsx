@@ -30,9 +30,9 @@ const Chat = () => {
   });
 
   ///////////////////////////////////////2025/3/30
-  const [publicRooms, setPublicRooms] = useState([]);
-  const [privateRooms, setPrivateRooms] = useState([]);
-  const [isPrivate, setIsPrivate] = useState(false);
+  const [publicRooms, setPublicRooms] = useState({});
+  const [privateRooms, setPrivateRooms] = useState({});
+  const [isPrivate, setIsPrivate] = useState(null);
 
   ///////////////////////////////////
 
@@ -104,8 +104,8 @@ const Chat = () => {
 
       newSocket.on('update_rooms', (data)=>{
         console.log("on update rooms", data);
-        setPublicRooms(data.public_rooms)
-        setPrivateRooms(data.private_rooms)
+        setPublicRooms(data.public_rooms_with_users)
+        setPrivateRooms(data.private_rooms_with_users)
 
       })
 /////////////////////////////////////////////////
@@ -168,7 +168,7 @@ const Chat = () => {
   const handleLeaveRoom = () => {
     console.log('leave a room, back to main')
     socket.emit('leave', {username:curUser, room:curRoom})
-    socket.emit('join', { username:curUser, room: DefaultRoom})
+    socket.emit('join', { username:curUser, room: DefaultRoom, isPrivate:false})
     socket.emit('update')
 
   }
@@ -176,7 +176,12 @@ const Chat = () => {
   const handleSwitchRoom= (room) => {
     console.log('leave current room to other room')
     socket.emit('leave', {username:curUser, room:curRoom})
-    socket.emit('join', { username:curUser, room:room})
+    if (Object.keys(publicRooms).includes(room)){
+      socket.emit('join', { username:curUser, room:room, isPrivate:false})
+    }else{
+      socket.emit('join', { username:curUser, room:room, isPrivate:true})
+    }
+
     socket.emit('update')
 
   }
@@ -208,29 +213,61 @@ const Chat = () => {
   }
 
   const renderPublicRooms = (publicRooms) => {
-    return publicRooms.map((room, index) => {
+    console.log('public, rooms', publicRooms)
+
+    const renderUsers = (users)=>{
+      return users.map((user, index) => {
+        return <li key={index}>{user}</li>
+      })
+    }
+
+    return Object.entries(publicRooms).map(([room, users]) => {
       return (
-        <Button key={index} onClick={()=> handleSwitchRoom(room)}>
-            <MdMeetingRoom/>{room}
-        </Button>)
+        <div key={room}>
+          <Button  onClick={()=> handleSwitchRoom(room)}>
+              <MdMeetingRoom/>{room}
+          </Button>
+          <ul>{users && renderUsers(users)}</ul>
+        </div>)
     })
   }
 
   const renderPrivateRooms = (privateRooms) => {
-    return privateRooms.map((room, index) => {
+    console.log('private, rooms', privateRooms)
+
+    const renderUsers = (users)=>{
+      return users.map((user, index) => {
+        return <li key={index}>{user}</li>
+      })
+    }
+
+    return Object.entries(privateRooms).map(([room, users]) => {
       return (
-        <Button key={index} onClick={()=> handleSwitchRoom(room)}>
-            <MdMeetingRoom/>{room}
-        </Button>)
+        <div key={room}>
+          <Button  onClick={()=> handleSwitchRoom(room)}>
+              <MdMeetingRoom/>{room}
+          </Button>
+          <ul>{users && renderUsers(users)}</ul>
+        </div>)
     })
   }
 
   const onHandleRoomPrivacyChange = (selectedItems) => {
+    console.log('onHandleRoomPrivacyChange called')
     const valArray= selectedItems.value
-    console.log("in chat, privacy", isPrivate);
-    handleCreateAndJoinRoom()
+
     setIsPrivate(valArray[0]);
+
+    setTimeout(() => {
+      handleCreateAndJoinRoom()
+      console.log("in chat, privacy", isPrivate);
+
+      document.activeElement.blur();
+    }, 0);
+
   };
+
+
 
   ///////
 
@@ -242,9 +279,9 @@ const Chat = () => {
           <Profile username={curUser}/>
           <Flex direction="column">
             {/* TODO: render public rooms and private rooms */}
-            {renderPublicRooms(publicRooms)}
+            {publicRooms && renderPublicRooms(publicRooms)}
           </Flex>
-          <SelectWithinPopover onChange={onHandleRoomPrivacyChange}/>
+          <SelectWithinPopover onChange={onHandleRoomPrivacyChange}  />
         </Flex>
         <Flex
             direction="column"
@@ -260,7 +297,7 @@ const Chat = () => {
             <Button onClick={handleLeaveRoom}>Leave</Button>
           </Flex>
           <Box height="600px" overflowY= "scroll">
-            {renderMessages(messages, curRoom, curUser)}
+            {messages && renderMessages(messages, curRoom, curUser)}
           </Box>
           <form onSubmit={sendMessage}>
               <Box position="relative">
@@ -288,7 +325,7 @@ const Chat = () => {
         </Flex>
         <Flex direction="column">
             {/* TODO: render public rooms and private rooms */}
-            {renderPrivateRooms(privateRooms)}
+            {privateRooms && renderPrivateRooms(privateRooms)}
           </Flex>
       </Flex>
     </div>

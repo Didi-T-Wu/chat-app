@@ -1,6 +1,6 @@
 // import { Button, Card, Stack } from "@chakra-ui/react"
 import CardWithForm  from "./CardWithForm";
-import  InputField  from "./inputField";
+import  InputField  from "./InputField";
 import Button  from "./myButton";
 import React from 'react';
 

@@ -2,7 +2,7 @@ import eventlet
 eventlet.monkey_patch()
 
 from flask import Flask, request
-from flask_socketio import SocketIO, emit,send, disconnect, join_room, leave_room
+from flask_socketio import SocketIO, emit, disconnect, join_room, leave_room
 from flask_cors import CORS
 from flask_migrate import Migrate  # Import Flask-Migrate
 from config import Config
@@ -130,8 +130,7 @@ def logout():
             break
     return {"msg": "logout successful"}
 
-############socket##################
-
+############socket#################################
 
 @socketio.on('logout')
 def handle_logout():

@@ -1,8 +1,6 @@
 
 from datetime import datetime, timezone
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
+from extensions import db
 # TODO: FIXME: created_at TIMESTAMP WITHOUT TIME ZONE
 
 class User(db.Model):
@@ -67,10 +65,10 @@ class Message(db.Model):
     def __repr__(self):
         return f'<Message {self.text[:20]}>'
 
-def connect_db(app):
-    """Connect this database to provided Flask app.
-    """
+# def connect_db(app):
+#     """Connect this database to provided Flask app.
+#     """
 
-    app.app_context().push()
-    db.app = app
-    db.init_app(app)
+#     app.app_context().push()
+#     db.app = app
+#     db.init_app(app)

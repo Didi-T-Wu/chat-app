@@ -8,7 +8,7 @@ const myForm = ({onSubmit, cardTitle, cardDescription, inputFields, footerButton
   return (
   <form onSubmit = { onSubmit } >
     <CardWithForm
-      cardTitle= { cardTitle}
+      cardTitle= {cardTitle}
       cardDescription= { cardDescription }
       inputFields={ inputFields.map((field, index) => (
         <InputField key={field.name||index} {...field} />

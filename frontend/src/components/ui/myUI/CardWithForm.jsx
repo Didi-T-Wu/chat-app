@@ -5,7 +5,7 @@ import React from 'react';
 const CardWithForm = ({cardTitle, cardDescription, inputFields, footerButtons}) => (
   <Card.Root maxW="sm">
     <Card.Header>
-      <Card.Title>{cardTitle}</Card.Title>
+      <Card.Title fontWeight="bold" fontSize="20px">{cardTitle}</Card.Title>
       <Card.Description>
         {cardDescription}
       </Card.Description>

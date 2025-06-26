@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate } from 'react-router-dom'
-import { Flex, Link as ChakraLink, Text } from "@chakra-ui/react"
+import { Flex, Link as ChakraLink, Text, Image, Box } from "@chakra-ui/react"
 
 import { API_BASE_URL } from '../config';
 import { AuthContext } from '../context/AuthContext';
 
 import LoginForm from '../components/auth/LoginForm';
+import backgroundImage  from '../assets/kuu-akura-pnK6Q-QTHM4-unsplash.jpg'
 
 
 const Login = ()=> {
@@ -56,7 +57,6 @@ const Login = ()=> {
 
 
   const onHandleSubmit = async (formData)=> {
-
 
     // TODO: Handle login logic (validation, etc.)
     // Prevent submission if fields are empty
@@ -119,18 +119,49 @@ const Login = ()=> {
   }
 
   return(
-    <Flex justify="center" align="center" h="100vh" direction="column">
+    <Flex justify="center" align="center" h="100vh" direction="column" position="relative"  >
       <div >
-        <LoginForm onSubmit={onHandleSubmit} loading={loading} />
+        <LoginForm onSubmit={onHandleSubmit} loading={loading}   />
         {errorMsg && <p style={{color:'red'}} aria-live="assertive" >{errorMsg}</p>}
         {successMsg && <p style={{ color: 'green' }} aria-live="polite">{successMsg}</p>}
       </div>
       <br/>
-      <Text>Do not have an account ? {" "}{" "}
-        <ChakraLink asChild variant="underline" color="cyan.500">
+      <Text fontWeight="bold">Do not have an account ? {" "}{" "}
+        <ChakraLink asChild variant="underline" color="blue.800">
           <Link to='/signup'>Create an Account</Link>
         </ChakraLink>{" "}
       </Text>
+      <Image
+        src={backgroundImage}
+        position="absolute"
+        left={0}
+        top={0}
+        zIndex={-1}
+        w="100%"
+        h="100%"
+        objectFit="cover"
+        filter ="brightness(130%)"
+      />
+      <Box
+        position="absolute"
+        bottom="2"
+        right="2"
+        fontSize="xs"
+      >
+        Photo by{' '}
+      <a
+        href="https://unsplash.com/@akurakuu?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ textDecoration: 'underline' }}
+      > kuu akura</a>{' '}on{' '}
+      <a
+        href="https://unsplash.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ textDecoration: 'underline' }}
+      > Unsplash </a>
+      </Box>
     </Flex>
   )
 }

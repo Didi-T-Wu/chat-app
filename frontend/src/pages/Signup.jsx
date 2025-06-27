@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate } from 'react-router-dom'
-import { Flex, Link as ChakraLink, Text } from "@chakra-ui/react"
+import { Flex, Link as ChakraLink, Text, Image, Box } from "@chakra-ui/react"
 
-import { AuthContext } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
+import { AuthContext } from '../context/AuthContext';
+
 import SignupForm from "../components/auth/SignupForm";
+import backgroundImage  from '../assets/kuu-akura-pnK6Q-QTHM4-unsplash.jpg'
 
 
 const Signup = ()=> {

@@ -3,7 +3,7 @@ from flask_jwt_extended import decode_token
 from models import User, Message
 from jwt import ExpiredSignatureError, InvalidTokenError
 from extensions import db, socketio
-from flask_socketio import emit, disconnect, join_room, leave_room
+from flask_socketio import emit, disconnect
 
 
 #TODO: figure out how to implement active users
@@ -15,33 +15,6 @@ def handle_logout():
     # Manually disconnect the socket session
     disconnect(request.sid)
 
-@socketio.on('join')
-def on_join(data):
-    username = data['username']
-    room = data['room']
-    join_room(room)
-    print(username + f' has entered room {room}')
-    emit('join_room', {
-                    'system': True,
-                    'username': username,
-                    'msg': f"{username} joined room {room}",
-                    'room':room
-
-                }, to=room)
-
-@socketio.on('leave')
-def on_leave(data):
-    username = data['username']
-    room = data['room']
-    leave_room(room)
-    print(username + f' has left room {room}')
-    emit('leave_room', {
-                    'system': True,
-                    'username': username,
-                    'msg': f"{username} left room {room}, back to main",
-
-                }, broadcast=True)
-##TODO: need 'back to main ' event
 
 @socketio.on('message')
 def handle_message(data):

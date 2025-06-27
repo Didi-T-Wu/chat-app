@@ -4,11 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
 import { AuthContext } from "../context/AuthContext";
 import Message from "./ui/myUI/myMessage";
-// now I create room, room will be created, room name is number by ascending order
-// leave room will leave curRoom and back to main
-//TODO:  later, sidebar will show rooms with people there,
-// by clicking it, user can join that room and leave current room
-// not returning to main
+
+
 const Chat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
@@ -16,11 +13,6 @@ const Chat = () => {
   const navigate = useNavigate();
   const { curUser, tabId, logout, token } = useContext(AuthContext);
 
-  ///////////////////////////////////////
-  const [curRoom, setCurRoom] = useState('main')
-  const [roomNum, setRoomNum] = useState(0)
-
-  ///////////////////////////////////////
 
   // Handle Authentication (Token validation and Navigation)
   useEffect(() => {
@@ -64,21 +56,7 @@ const Chat = () => {
         console.log("on user_left", data);
         setMessages((prevMessages) => [...prevMessages, data]);
       });
-////////////////////////////////////////
-      newSocket.on("join_room", (data) => {
-        console.log("on joined room", data);
-        setMessages(() => [data]);
 
-        setRoomNum(`${data.room}`)
-        setCurRoom(`Room ${data.room}`)
-      });
-
-      newSocket.on("leave_room", (data) => {
-        console.log("leave room back to main", data);
-        setMessages(() => [data]);
-        setCurRoom(()=> 'main')
-      });
-/////////////////////////////////////////////////
       newSocket.on("auth_error", (err) => {
         console.log("in auth_err", err.msg);
         console.error(err);
@@ -103,6 +81,7 @@ const Chat = () => {
   };
 
   const handleLogout = () => {
+    // FIXME: error showed after logout
     console.log('Logging out...');
     logout(tabId, sessionStorage.getItem('sid'));
     console.log('socket',socket)
@@ -116,25 +95,8 @@ const Chat = () => {
 
   };
 
-  ///////////////////
-  const handleCreateAndJoinRoom = () => {
-    console.log('create and join a room')
-    //TODO: create a room name
-    const newRoomNumber = Number(roomNum)+1
-    socket.emit('join', {username:curUser, room:newRoomNumber})
-
-  }
-
-  const handleLeaveRoom = () => {
-    console.log('leave a room, back to main')
-    socket.emit('leave', {username:curUser, room:'main'})
-
-  }
-  /////////////////////
-
   return (
     <div>
-      <h2>Room : {curRoom}</h2>
       <div style={{ border: "1px solid black", padding: "10px", height: "500px", overflowY: "scroll" }}>
         {messages.map((data, index) => (
           data.system ? (
@@ -142,6 +104,7 @@ const Chat = () => {
           ) : (
             data.username === curUser?(
              <Message
+                key={index}
                 username={curUser}
                 message = {data.msg}
                 bgColor='gray.100'
@@ -151,6 +114,7 @@ const Chat = () => {
               />
             ):(
               <Message
+              key={index}
               username={data.username}
               message = {data.msg}
               bgColor='teal.300'
@@ -175,10 +139,6 @@ const Chat = () => {
         </button>
       </form>
       <button onClick={handleLogout}>Logout</button>
-      <br/>
-      <button onClick={handleCreateAndJoinRoom}>Create Room</button>
-      <br/>
-      <button onClick={handleLeaveRoom}>Leave</button>
     </div>
   );
 };

@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
 import { AuthContext } from "../context/AuthContext";
 import Message from "./ui/myUI/myMessage";
-
+import { Grid, GridItem, Box, Input, Text, Button} from "@chakra-ui/react"
+import  { BsSendIcon } from "../theme/icons"
 
 const Chat = () => {
   const [message, setMessage] = useState("");
@@ -12,7 +13,6 @@ const Chat = () => {
   const [socket, setSocket] = useState(null); // Store socket in state
   const navigate = useNavigate();
   const { curUser, tabId, logout, token } = useContext(AuthContext);
-
 
   // Handle Authentication (Token validation and Navigation)
   useEffect(() => {
@@ -95,51 +95,93 @@ const Chat = () => {
 
   };
 
-  return (
-    <div>
-      <div style={{ border: "1px solid black", padding: "10px", height: "500px", overflowY: "scroll" }}>
-        {messages.map((data, index) => (
-          data.system ? (
-            <strong key={index}><p style={{textAlign:"center"}}>{data.msg}</p></strong>
-          ) : (
-            data.username === curUser?(
-             <Message
+  const renderMsgBox = () => {
+    return (
+      <Box position="relative" h="80vh" display="flex" flexDirection="column">
+        {/* Messages Container */}
+        <Box flex="1" borderWidth="1px" borderColor="gray.600" rounded="md" overflowY="auto" p={2}>
+          {messages.map((data, index) => (
+            data.system ? (
+              <Text key={index} textAlign="center" fontWeight="bold">{data.msg}</Text>
+            ) : (
+              data.username === curUser?(
+               <Message
+                  key={index}
+                  username={curUser}
+                  message = {data.msg}
+                  bgColor="teal.600"
+                  textColor="white"
+                  alignMessageTo="flex-end"
+                  timeStamp={data.timeStamp}
+                />
+              ):(
+                <Message
                 key={index}
-                username={curUser}
+                username={data.username}
                 message = {data.msg}
-                bgColor='gray.100'
-                textColor='black'
-                alignMessageTo='flex-end'
+                bgColor="gray.600"
+                textColor="white"
+                alignMessageTo="flex-start"
                 timeStamp={data.timeStamp}
               />
-            ):(
-              <Message
-              key={index}
-              username={data.username}
-              message = {data.msg}
-              bgColor='teal.300'
-              textColor='while'
-              alignMessageTo='flex-start'
-              timeStamp={data.timeStamp}
-            />
 
+              )
             )
-          )
-        ))}
-      </div>
-      <form onSubmit={sendMessage}>
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Type a message..."
-        />
-        <button type="submit" disabled={!message.trim()}>
-          Send
-        </button>
-      </form>
-      <button onClick={handleLogout}>Logout</button>
-    </div>
+          ))}
+          </Box>
+          {/* Input Form */}
+          <Box
+            as="form"
+            onSubmit={sendMessage}
+            display="flex"
+            alignItems="center"
+            gap={2}
+            borderColor="gray.600"
+            paddingTop={2}
+            >
+              <Input
+                flex="1"
+                borderColor="gray.600"
+                type="text"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Type a message..."
+                color="white"
+              />
+            <Button type="submit" disabled={!message.trim()} >
+              <BsSendIcon />
+            </Button>
+          </Box>
+      </Box>
+    )
+  }
+
+  return (
+    <Grid
+      p={8}
+      gap={4}
+      bgColor="gray.800"
+      color="gray.300"
+      h="100vh"
+      templateRows="repeat(20, 1fr)"
+      templateColumns="repeat(7, 1fr)">
+
+      <GridItem rowSpan={3} colSpan={2}>
+        <Box>
+          avatar
+          <button onClick={handleLogout}>Logout</button>
+        </Box>
+      </GridItem>
+      <GridItem rowSpan={3} colSpan={5}>
+        <Box>active users</Box>
+      </GridItem>
+      <GridItem rowSpan={17} colSpan={2}>
+        <Box>registered users</Box>
+      </GridItem>
+      <GridItem rowSpan={17} colSpan={5}>
+        { renderMsgBox()}
+      </GridItem>
+    </Grid>
   );
 };
 

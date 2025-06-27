@@ -155,7 +155,6 @@ const Chat = () => {
       </Box>
     )
   }
-
   return (
     <Grid
       p={8}

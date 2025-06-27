@@ -62,7 +62,6 @@ const footerButtons = [
     type: "submit",
     buttonText: loading ? <ClipLoader size={15} color="#ffffff" /> : "Login",
     color:"blue.200",
-
     isDisabled: loading,
   },
 ]

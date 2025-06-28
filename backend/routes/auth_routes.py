@@ -8,6 +8,10 @@ from flask_jwt_extended import create_access_token
 #      2. may implement JWT blacklist later
 auth_bp = Blueprint('auth', __name__, url_prefix='/api')
 
+@auth_bp.route('/logout', methods=['POST'])
+def logout():
+    print('logout route setup')
+    return {"msg":"logout"},200
 
 @auth_bp.route('/login', methods=['POST'])
 def login():

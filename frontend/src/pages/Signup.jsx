@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate } from 'react-router-dom'
-import { Flex, Link as ChakraLink, Text, Image, Box } from "@chakra-ui/react"
+import { Flex, Link as ChakraLink, Text, Box } from "@chakra-ui/react"
 
 import { API_BASE_URL } from '../config';
 import { AuthContext } from '../context/AuthContext';
 
 import SignupForm from "../components/auth/SignupForm";
-import backgroundImage  from '../assets/kuu-akura-pnK6Q-QTHM4-unsplash.jpg'
+import BackGroundImage from "../components/BackGroundImage";
+import Alert from "../components/ui/myUI/myAlert"
 
 
 const Signup = ()=> {
@@ -29,7 +30,6 @@ const Signup = ()=> {
 
   const onHandleSubmit= async (formData)=> {
 
-    // TODO: Handle Sign up logic (validation, etc.)
     // Prevent submission if fields are empty
     if (!formData.username.trim() || !formData.password.trim()) {
       setErrorMsg("Username and password are required");
@@ -80,48 +80,21 @@ const Signup = ()=> {
 
   return(
     <Flex justify="center" align="center" h="100vh" direction="column" position="relative">
-      <div >
+      <Box>
         <SignupForm onSubmit={onHandleSubmit} loading={loading} />
-        {errorMsg && <p style={{color:'red'}} aria-live="assertive" >{errorMsg}</p>}
-        {successMsg && <p style={{ color: 'green' }} aria-live="polite">{successMsg}</p>}
-      </div>
+        <Box mt={2}>
+          {errorMsg && <Alert title={errorMsg} status="error" />}
+          {successMsg && <Alert title={successMsg} status="success" />}
+        </Box>
+      </Box>
       <br/>
       <Text fontWeight="bold">Already have an account ? {" "}{" "}
         <ChakraLink asChild variant="underline" color="blue.800">
           <Link to='/login'>To Login Page</Link>
         </ChakraLink>{" "}
       </Text>
-      <Image
-              src={backgroundImage}
-              position="absolute"
-              left={0}
-              top={0}
-              zIndex={-1}
-              w="100%"
-              h="100%"
-              objectFit="cover"
-              filter ="brightness(130%)"
-            />
-            <Box
-              position="absolute"
-              bottom="2"
-              right="2"
-              fontSize="xs"
-            >
-              Photo by{' '}
-            <a
-              href="https://unsplash.com/@akurakuu?utm_content=creditCopyText&utm_medium=referral&utm_source=unsplash"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ textDecoration: 'underline' }}
-            > kuu akura</a>{' '}on{' '}
-            <a
-              href="https://unsplash.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ textDecoration: 'underline' }}
-            > Unsplash </a>
-            </Box>
+      <BackGroundImage />
+
     </Flex>
   )
 }

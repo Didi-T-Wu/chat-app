@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link, useNavigate } from 'react-router-dom'
-import { Flex, Link as ChakraLink, Text} from "@chakra-ui/react"
+import { Flex, Link as ChakraLink, Text, Box} from "@chakra-ui/react"
 
 import { API_BASE_URL } from '../config';
 import { AuthContext } from '../context/AuthContext';

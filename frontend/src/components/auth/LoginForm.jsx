@@ -21,8 +21,7 @@ const LoginForm = ({ onSubmit, loading }) => {
     setFormData({ username:'', password:'' })
   }
 
-  // Define inputFields **outside** LoginForm so it's not re-created every render
-const inputFields = [
+const inputFieldProps = [
   {
     label: "Username",
     type: "text",
@@ -32,8 +31,7 @@ const inputFields = [
     placeholder: "Type your username",
     autoComplete: "off",
     required: true,
-    "aria-label": "Enter your username",
-    w: "20rem",
+    "aria-label": "Enter your username"
   },
   {
     label: "Password",
@@ -44,12 +42,11 @@ const inputFields = [
     placeholder: "Type your password",
     autoComplete: "off",
     required: true,
-    "aria-label": "Enter your password",
-    w: "20rem",
+    "aria-label": "Enter your password"
   },
 ];
 
-const footerButtons = [
+const footerButtonProps = [
   {
     variant:"outline",
     buttonText: "Cancel",
@@ -70,8 +67,8 @@ const footerButtons = [
       onSubmit={onFormSubmit}
       cardTitle="Login"
       cardDescription="Login to your account"
-      inputFields={inputFields}
-      footerButtons={footerButtons}
+      inputFieldProps={inputFieldProps}
+      footerButtonProps={footerButtonProps}
     />
   );
 }

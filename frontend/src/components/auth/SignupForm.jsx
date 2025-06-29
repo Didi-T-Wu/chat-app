@@ -1,14 +1,14 @@
 import AuthForm from "../ui/myUI/myForm";
-import React, { useState, useCallback} from 'react';
+import React, { useState } from 'react';
 import { ClipLoader } from "react-spinners";
 
 const SignupForm = ({ onSubmit, loading }) => {
   const [formData, setFormData] = useState({username:'', password:''})
 
-  const onFormDataChange = useCallback((e) => {
-    const { value, name } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  }, []);
+  const onFormDataChange =(e) => {
+    const {value, name} = e.target
+    setFormData((prev)=> ({...prev,[name]:value}))
+  }
 
   const onFormSubmit = (e) => {
     e.preventDefault()
@@ -20,7 +20,7 @@ const SignupForm = ({ onSubmit, loading }) => {
     setFormData({ username:'', password:'' })
   }
 
-  // Define inputFields **outside** Form so it's not re-created every render
+
 const inputFields = [
   {
     label: "Username",

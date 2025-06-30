@@ -38,11 +38,11 @@ const useSocket = (token, messageHandlers={}) => {
      setSocket(newSocket); // Save socket instance to state
 
      newSocket.on('connect', () => {
-      const sid = newSocket.id; // Get the WebSocket session ID
-      console.log("Connected with SID:", sid);
+      // const sid = newSocket.id; // Get the WebSocket session ID
+      console.log("Connected");
 
       // store this `sid` in sessionStorage or state for later use
-      sessionStorage.setItem('sid', sid);
+      // sessionStorage.setItem('sid', sid);
     });
 
 

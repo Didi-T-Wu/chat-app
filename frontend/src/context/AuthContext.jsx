@@ -61,7 +61,7 @@ const AuthProvider = ({children}) => {
     sessionStorage.setItem(`token_${tabId}`, token)
   }
 
-  const logout = async (tabId, sid) => {
+  const logout = async (tabId) => {
     console.log('logout called')
     try {
       const response = await fetch(`${API_BASE_URL}/api/logout`, {
@@ -69,7 +69,7 @@ const AuthProvider = ({children}) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ username:curUser, sid }),
+        body: JSON.stringify({ username:curUser }),
       });
 
 
@@ -87,7 +87,6 @@ const AuthProvider = ({children}) => {
 
       sessionStorage.removeItem(`curUser_${tabId}`)
       sessionStorage.removeItem(`token_${tabId}`)
-      sessionStorage.removeItem('sid')
 
     }catch (error) {
       console.error('Logout failed:', error);

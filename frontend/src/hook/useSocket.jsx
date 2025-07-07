@@ -27,22 +27,21 @@ const useSocket = (token, messageHandlers={}) => {
 
   const [socket, setSocket] = useState(null); // Store socket in state
 
-  let newSocket;
+
   // Handle Socket Initialization and Listeners
   useEffect(() => {
     if (!token) return; // No socket if no token
 
     console.log('Initializing socket connection...');
     const timeoutId = setTimeout(()=> {
-     const newSocket = io(API_BASE_URL, { query: { token }});
+     const newSocket = io(API_BASE_URL, {
+      auth: { token },
+      autoConnect: false
+    });
      setSocket(newSocket); // Save socket instance to state
 
      newSocket.on('connect', () => {
-      // const sid = newSocket.id; // Get the WebSocket session ID
       console.log("Connected");
-
-      // store this `sid` in sessionStorage or state for later use
-      // sessionStorage.setItem('sid', sid);
     });
 
 
@@ -55,14 +54,15 @@ const useSocket = (token, messageHandlers={}) => {
     addSocketListener("user_joined", messageHandlers.userJoined)
     addSocketListener("auth_error", messageHandlers.authError)
 
+    newSocket.connect();
   }, 500);
 
 
   return () => {
         clearTimeout(timeoutId)
-        if(newSocket){
+        if(socket){
           console.log('Disconnecting socket on cleanup...');
-          newSocket.disconnect();
+          socket.disconnect();
           setSocket(null);
         }
 

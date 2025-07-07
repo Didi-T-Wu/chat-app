@@ -2,16 +2,11 @@ from flask import Blueprint, request
 from models import User
 from uuid import uuid4
 from extensions import bcrypt, db
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_required
 
 #TODO: 1. implement logout
 #      2. may implement JWT blacklist later
 auth_bp = Blueprint('auth', __name__, url_prefix='/api')
-
-@auth_bp.route('/logout', methods=['POST'])
-def logout():
-    print('logout route setup')
-    return {"msg":"logout"},200
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -78,6 +73,14 @@ def register():
         ###############TODO: review code below
         # app.logger.error(f"Error registering user: {str(e)}")
         return {"msg": f"Error registering user: {str(e)}"}, 500
+
+################ 20250703
+@auth_bp.route('/protected', methods=['GET'])
+@jwt_required()
+def protected():
+    user_id = get_jwt_identity()
+    # check token here? automatically send 401 if token is invalid?
+    return  {"user_id":user_id}
 
 
 

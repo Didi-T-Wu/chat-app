@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 
 import { AuthContext } from "../context/AuthContext";
 import { Grid, GridItem, Box, Button, Flex} from "@chakra-ui/react"
@@ -10,12 +10,17 @@ import { fakeUser1 } from "../context/UsersContext";
 import useSocket from "../hook/useSocket";
 import MessagePanel from "./MessagePanel";
 
+// 20250703
+
+import FetchWithAuth from "./FetchWithAuth";
+
 const Chat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const navigate = useNavigate();
-  const { curUser, tabId, logout, token } = useContext(AuthContext);
+  const { curUser, logout, token } = useContext(AuthContext);
 
+  // Handle Socket Initialization and Listeners
   const messageHandlers = {
     newMessage: (data) => {
         console.log('on new_message');
@@ -32,43 +37,41 @@ const Chat = () => {
     authError: (err) => {
         console.log("in auth_err", err.msg);
         console.error(err);
-        navigate("/home");
+        navigate("/login");
     }}
 
   const socket = useSocket(token, messageHandlers)
 
   // Handle Authentication (Token validation and Navigation)
   useEffect(() => {
-    if (!token) {
-      console.log('No token, redirecting to home...');
-      navigate('/home');
-    } else if (token && curUser) {
-      console.log('Token and user are present, navigating to chat...');
-      navigate('/chat');
-    }
-  }, [curUser, token, navigate]);
+    const fetchProtectedData = async () => {
 
-  // Handle Socket Initialization and Listeners
+      console.log("inside fetchProtectedData in chat.jsx ")
+      const res = await FetchWithAuth("/api/protected", navigate)
+      const data = await res.json();
+      console.log(data)
+    }
+    fetchProtectedData()
+  }, [navigate]);
 
 
   const sendMessage = (e) => {
     e.preventDefault();
     if (message.trim() && socket) {
-      socket.emit('message', { msg: message, username: curUser });
+      console.log('send message')
+      socket.emit("message", { msg: message, username: curUser });
       setMessage("");
     }
   };
 
   const handleLogout = () => {
-    console.log('Logging out...');
-    logout(tabId, sessionStorage.getItem('sid'));
-    console.log('socket',socket)
-    if(socket){
+    if(socket && socket.connected){
       console.log('emit logout')
-      // socket.emit('logout')
-      navigate('/home')
-      console.log('Logout complete');
+      socket.disconnect();
     }
+    console.log('Logging out...');
+    logout();
+    navigate("/login")
   };
 
 

@@ -1,4 +1,4 @@
-import React,  { createContext, useState, useEffect,  useRef }  from 'react';
+import React,  { createContext, useState, useEffect }  from 'react';
 import { API_BASE_URL } from '../config';
 const AuthContext = createContext()
 
@@ -10,7 +10,10 @@ const AuthProvider = ({children}) => {
   const [tabId, setTabId] = useState(sessionStorage.getItem('tabId') || crypto.randomUUID())
   const [curUser, setCurUser] = useState(sessionStorage.getItem(`curUser_${tabId}`)|| '')
   const [token, setToken] = useState(sessionStorage.getItem(`token_${tabId}`)|| '')
-  const isFirstRender = useRef(true);
+
+
+  // 20250702
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   // const loadActiveUsers = async () => {
   //   console.log("loadActiveUsers called")
@@ -21,19 +24,21 @@ const AuthProvider = ({children}) => {
   // }
 
   useEffect(()=> {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
     console.log("useEffect in AuthProvider running");
 
-    // Save tabId to sessionStorage
     if(!sessionStorage.getItem('tabId')){
       sessionStorage.setItem('tabId', tabId)
-      setTabId(tabId)
     }
-    console.log("useEffect in AuthProvider after tabId", tabId);
-    console.log("useEffect in AuthProvider after tabId token", token);
+
+    const token = sessionStorage.getItem(`token_${tabId}`)
+    const curUser = sessionStorage.getItem(`curUser_${tabId}`)
+
+    if(token && curUser){
+      setToken(token)
+      setCurUser(curUser)
+      setIsAuthenticated(true)
+    }
+
    // Load active users only after authentication or session changes
     // if (curUser && token) {
     //   console.log('loadActive users')
@@ -56,60 +61,27 @@ const AuthProvider = ({children}) => {
 
     setCurUser(username)
     setToken(token)
+    setIsAuthenticated(true)
 
     sessionStorage.setItem(`curUser_${tabId}`, username)
     sessionStorage.setItem(`token_${tabId}`, token)
   }
 
-  const logout = async (tabId) => {
+  const logout = () => {
     console.log('logout called')
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/logout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username:curUser }),
-      });
-
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Logout failed:', errorData)
-        throw new Error('Logout failed');
-      }
-      const data = await response.json()
-      console.log(data.msg);
-
       setUsers([])
       setCurUser('');
       setToken('')
+      setTabId('')
+      setIsAuthenticated(false)
 
       sessionStorage.removeItem(`curUser_${tabId}`)
       sessionStorage.removeItem(`token_${tabId}`)
-
-    }catch (error) {
-      console.error('Logout failed:', error);
-    }
-  }
-
-  // const logout = (tabId) => {
-  //   console.log('logout called')
-  //   setUsers([])
-  //   setCurUser('');
-  //   setToken('')
-
-  //   sessionStorage.removeItem(`curUser_${tabId}`)
-  //   sessionStorage.removeItem(`token_${tabId}`)
-  // }
-
-  const getCurUserToken = () => {
-    console.log('getCurUserToken called')
-    return token
+      sessionStorage.removeItem('tabId')
   }
 
   return (
-      <AuthContext.Provider value={{users, curUser, tabId, token, authenticate, logout, getCurUserToken }}>
+      <AuthContext.Provider value={{users, curUser, tabId, token, isAuthenticated, authenticate, logout  }}>
           {children}
       </AuthContext.Provider>
   );

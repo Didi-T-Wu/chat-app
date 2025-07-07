@@ -9,12 +9,6 @@ from flask_socketio import emit, disconnect
 #TODO: figure out how to implement active users
 active_users = {}
 
-@socketio.on('logout')
-def handle_logout():
-    print('socket logout')
-    # Manually disconnect the socket session
-    disconnect(request.sid)
-
 
 @socketio.on('message')
 def handle_message(data):
@@ -60,10 +54,10 @@ def handle_message(data):
         }, broadcast=True )
 
 @socketio.on('connect')
-def handle_connect():
+def handle_connect(auth):
     print("A user connected!")
     print('request.sid', request.sid)
-    token = request.args.get('token') # Get the JWT token from the query params
+    token = auth.get('token')
 
     #if no token, emit an error and disconnect the user
     if not token:

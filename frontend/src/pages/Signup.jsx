@@ -61,9 +61,17 @@ const Signup = ()=> {
       }}
 
       const data = await response.json()
-      console.log(data.msg)
-      console.log('data received from backend in Signup.js', data)
-      authenticate(data.username, data.token)
+      // Get token and username from backend then login(using login function in auth context)
+      if (data?.username && data?.token) {
+        authenticate(data.username, data.token);
+      } else {
+        // Log the error for monitoring, but avoid exposing sensitive data in production
+        console.error("Missing username or token",
+          { username: data?.username ? 'Present' : 'Missing', token: data?.token ? 'Present' : 'Missing' });
+
+        setErrorMsg("An error occurred. Please try logging in again.");
+
+      }
       setSuccessMsg("Sign up successful! Redirecting...");
       setTimeout(() => navigate('/chat'), 1500);  // Wait 1.5 sec before redirecting
 

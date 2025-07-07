@@ -1,66 +1,48 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from "react-router-dom"
 import { Flex, Link as ChakraLink, Text, Box} from "@chakra-ui/react"
 
-import { API_BASE_URL } from '../config';
-import { AuthContext } from '../context/AuthContext';
+import { API_BASE_URL } from "../config";
+import { AuthContext } from "../context/AuthContext";
 
-import LoginForm from '../components/auth/LoginForm';
+import LoginForm from "../components/auth/LoginForm";
 import BackGroundImage from "../components/BackGroundImage";
-import Alert from '../components/ui/myUI/myAlert'
+import Alert from "../components/ui/myUI/myAlert"
 
 
 const Login = ()=> {
-  const [errorMsg, setErrorMsg] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
-  const { authenticate, curUser, getCurUserToken } = useContext(AuthContext)
+  const { authenticate, token } = useContext(AuthContext)
 
   console.log('Login component rendering');
 
   useEffect(() => {
-      console.log('curUser in useEffect in Login.js', curUser);
-      const curUserToken = getCurUserToken(curUser);
-      console.log('token from localStorage in useEffect in Login.js', curUserToken);
+      console.log('token in useEffect in Login.js', token);
 
-      console.log('checking if token and user are present in useEffect in Login.js');
-      if(curUserToken && curUser){
-        console.log('token and user are present');
-        navigate('/chat');
+      if(token){
+        console.log('token is present');
+        navigate("/chat");
       }
-    }, [curUser, getCurUserToken, navigate]);  // Runs only when curUser or getCurUserToken changes
+    }, [token, navigate]);
 
   useEffect(() => {
     console.log('errorMsg in useEffect in Login.js', errorMsg);
     if (errorMsg) {
+      console.log("Error message set");
       const timer = setTimeout(() => {
-        setErrorMsg('');
+        setErrorMsg("");
       }, 5000); // Clear error after 5 seconds
 
       return () => clearTimeout(timer); // Clean up the timer on component unmount
     }
   }, [errorMsg]);
 
-  useEffect(()=>{
-    console.log('successMsg in useEffect in Login.js', successMsg);
-    if(successMsg){
-      console.log("Success message set, starting redirect timeout...");
-      const timer = setTimeout(() => {
-        console.log("Redirecting to /chat...");
-        navigate('/chat')
-      }, 1500);  // Wait 1.5 sec before redirecting
-      return () => clearTimeout(timer);
-    }
-
-  }, [successMsg, navigate])
-
-
 
   const onHandleSubmit = async (formData)=> {
 
-    // TODO: Handle login logic (validation, etc.)
-    // Prevent submission if fields are empty
     if (!formData.username.trim() || !formData.password.trim()) {
       setErrorMsg("Username and password are required");
       return;
@@ -68,7 +50,7 @@ const Login = ()=> {
 
     console.log("Login Data:", formData);
     setLoading(true);
-    setErrorMsg('');
+    setErrorMsg("");
 
     try{
       const response =  await fetch(`${API_BASE_URL}/api/login`, {
@@ -81,7 +63,7 @@ const Login = ()=> {
         const errorData = await response.json();
         switch(response.status){
           case 401:
-            throw new Error(errorData.msg || 'Invalid credentials')
+            throw new Error(errorData.msg || "Invalid credentials")
           case 400:
             throw new Error(errorData.msg || "Invalid input. Please check your details and try again.")
           case 404:
@@ -107,6 +89,7 @@ const Login = ()=> {
 
       }
       setSuccessMsg("Login successful! Redirecting...");
+      setTimeout(() => navigate("/chat"), 5000);
 
     }catch(err){
       if (err.message.includes("Failed to fetch")) {
@@ -131,7 +114,7 @@ const Login = ()=> {
       <br/>
       <Text fontWeight="bold">Do not have an account ? {" "}{" "}
         <ChakraLink asChild variant="underline" color="blue.800">
-          <Link to='/signup'>Create an Account</Link>
+          <Link to="/signup">Create an Account</Link>
         </ChakraLink>{" "}
       </Text>
       <BackGroundImage />

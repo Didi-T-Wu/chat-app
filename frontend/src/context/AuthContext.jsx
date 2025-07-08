@@ -1,27 +1,23 @@
 import React,  { createContext, useState, useEffect }  from 'react';
-import { API_BASE_URL } from '../config';
+import { generateColorFromUsername } from '../helperFunctions';
 const AuthContext = createContext()
 
 const AuthProvider = ({children}) => {
   console.log("AuthProvider component is rendering");
 
-  // TODO: Load users from backend
-  const [users, setUsers] = useState([]) // List of active usernames
   const [tabId, setTabId] = useState(sessionStorage.getItem('tabId') || crypto.randomUUID())
-  const [curUser, setCurUser] = useState(sessionStorage.getItem(`curUser_${tabId}`)|| '')
+  const [curUser, setCurUser] = useState(()=> { //curUser = { username: "Alice", avatarBgColor:"pink" }
+    const stored = sessionStorage.getItem(`curUser_${tabId}`)
+    return stored? JSON.parse(stored): null
+  })
   const [token, setToken] = useState(sessionStorage.getItem(`token_${tabId}`)|| '')
 
 
   // 20250702
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
-  // const loadActiveUsers = async () => {
-  //   console.log("loadActiveUsers called")
-  //   const response = await fetch(`${API_BASE_URL}/api/users/active`)
-  //   const data = await response.json()
-  //   console.log("activeUsers data", data)
-  //   return data
-  // }
+
+  let avatarBgColor = ''
 
   useEffect(()=> {
     console.log("useEffect in AuthProvider running");
@@ -30,8 +26,10 @@ const AuthProvider = ({children}) => {
       sessionStorage.setItem('tabId', tabId)
     }
 
+    //after refresh page
     const token = sessionStorage.getItem(`token_${tabId}`)
-    const curUser = sessionStorage.getItem(`curUser_${tabId}`)
+    const stored = sessionStorage.getItem(`curUser_${tabId}`)
+    const curUser = stored? JSON.parse(stored): null
 
     if(token && curUser){
       setToken(token)
@@ -39,38 +37,24 @@ const AuthProvider = ({children}) => {
       setIsAuthenticated(true)
     }
 
-   // Load active users only after authentication or session changes
-    // if (curUser && token) {
-    //   console.log('loadActive users')
-    // loadActiveUsers().then((activeUsers) => setUsers(activeUsers));
-    // }
-
-  },[curUser,token, tabId])
+  },[curUser?.username,token, tabId])
 
 
   const authenticate = (username, token)=> {
     console.log('authenticate called')
-
-    // Avoid duplicates in the users list
-    // setUsers((prevUsers) => {
-    //   if (!prevUsers.includes(username)) {
-    //     return [...prevUsers, username];
-    //   }
-    //   return prevUsers;
-    // });
-
-    setCurUser(username)
+    avatarBgColor = generateColorFromUsername(username)
+    const userObj = { username:username, avatarBgColor: avatarBgColor }
+    setCurUser(userObj)
     setToken(token)
     setIsAuthenticated(true)
 
-    sessionStorage.setItem(`curUser_${tabId}`, username)
+    sessionStorage.setItem(`curUser_${tabId}`, JSON.stringify(userObj))
     sessionStorage.setItem(`token_${tabId}`, token)
   }
 
   const logout = () => {
     console.log('logout called')
-      setUsers([])
-      setCurUser('');
+      setCurUser(null);
       setToken('')
       setTabId('')
       setIsAuthenticated(false)
@@ -81,7 +65,7 @@ const AuthProvider = ({children}) => {
   }
 
   return (
-      <AuthContext.Provider value={{users, curUser, tabId, token, isAuthenticated, authenticate, logout  }}>
+      <AuthContext.Provider value={{curUser, avatarBgColor, tabId, token, isAuthenticated, authenticate, logout  }}>
           {children}
       </AuthContext.Provider>
   );

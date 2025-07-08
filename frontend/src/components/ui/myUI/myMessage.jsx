@@ -1,7 +1,6 @@
 import { Flex, Avatar, HStack, Stack, Text } from "@chakra-ui/react"
 
-const Message = ({username, message, avatar, bgColor,textColor, timeStamp, alignMessageTo}) => {
-    // TODO: randomly choose avatar color
+const Message = ({username, avatarBgColor, message, avatar, bgColor, textColor, timeStamp, alignMessageTo}) => {
     // TODO: timestamp for different locale
 
     return(
@@ -9,7 +8,7 @@ const Message = ({username, message, avatar, bgColor,textColor, timeStamp, align
           <Flex direction="column" gap="1" maxW='70%' p='2'>
             <Flex >
                 <HStack key={username} gap="4">
-                    <Avatar.Root size='xs' variant='subtle' bg='pink'>
+                    <Avatar.Root size='xs' variant='subtle' bg={avatarBgColor}>
                         <Avatar.Fallback name={username} />
                         <Avatar.Image src={avatar} />
                     </Avatar.Root>

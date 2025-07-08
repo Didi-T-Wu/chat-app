@@ -1,8 +1,9 @@
 import Message from "./ui/myUI/myMessage";
 import { Box, Input, Text, Button } from "@chakra-ui/react"
 import { BsSendIcon } from "../theme/icons"
+import { generateColorFromUsername } from "../helperFunctions";
 
-
+// TODO: add avatarBgColor for other users: put helper function to a file
 const MessagePanel = ({ message, messages, curUser, sendMessage, setMessage}) => {
     return (
       <Box position="relative" h="80vh" display="flex" flexDirection="column">
@@ -12,10 +13,11 @@ const MessagePanel = ({ message, messages, curUser, sendMessage, setMessage}) =>
             data.system ? (
               <Text key={index} textAlign="center" fontWeight="bold">{data.msg}</Text>
             ) : (
-              data.username === curUser?(
+              data.username === curUser.username?(
                <Message
                   key={index}
-                  username={curUser}
+                  username={curUser.username}
+                  avatarBgColor={curUser.avatarBgColor}
                   message = {data.msg}
                   bgColor="teal.600"
                   textColor="white"
@@ -26,6 +28,7 @@ const MessagePanel = ({ message, messages, curUser, sendMessage, setMessage}) =>
                 <Message
                 key={index}
                 username={data.username}
+                avatarBgColor={generateColorFromUsername(data.username)}
                 message = {data.msg}
                 bgColor="gray.600"
                 textColor="white"

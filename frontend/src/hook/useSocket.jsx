@@ -2,31 +2,10 @@ import { useState, useEffect } from "react";
 import { io } from "socket.io-client";
 import { API_BASE_URL } from '../config';
 
-// const messageHandlers = {
-//     newMessage: (data) => {
-//         console.log('on new_message');
-//         setMessages((prevMessages) => [...prevMessages, data])
-//     },
-//     userJoined: (data) => {
-//         console.log("on user_joined", data);
-//         setMessages((prevMessages) => [...prevMessages, data]);
-//     },
-//     userLeft: (data) => {
-//         console.log("on user_left", data);
-//         setMessages((prevMessages) => [...prevMessages, data]);
-//     },
-//     authError: (err) => {
-//         console.log("in auth_err", err.msg);
-//         console.error(err);
-//         navigate("/home");
-//     }}
-
-
 
 const useSocket = (token, messageHandlers={}) => {
 
   const [socket, setSocket] = useState(null); // Store socket in state
-
 
   // Handle Socket Initialization and Listeners
   useEffect(() => {
@@ -44,7 +23,6 @@ const useSocket = (token, messageHandlers={}) => {
       console.log("Connected");
     });
 
-
     const addSocketListener = (event, handler) => {
         if (handler) newSocket.on(event, handler);
       };
@@ -52,6 +30,7 @@ const useSocket = (token, messageHandlers={}) => {
     addSocketListener("new_message", messageHandlers.newMessage);
     addSocketListener("user_left", messageHandlers.userLeft);
     addSocketListener("user_joined", messageHandlers.userJoined)
+    addSocketListener("get_active_users", messageHandlers.getActiveUsers)
     addSocketListener("auth_error", messageHandlers.authError)
 
     newSocket.connect();

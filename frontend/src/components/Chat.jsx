@@ -6,19 +6,23 @@ import { Grid, GridItem, Box, Button, Flex} from "@chakra-ui/react"
 import  { IoIosLogOutIcon } from "../theme/icons"
 import MyAvatar from "./ui/myUI/myAvatar";
 
-import { fakeUser1 } from "../context/UsersContext";
 import useSocket from "../hook/useSocket";
 import MessagePanel from "./MessagePanel";
 
 // 20250703
-
 import FetchWithAuth from "./FetchWithAuth";
+
+//20250708
+import { generateColorFromUsername } from "../helperFunctions"
 
 const Chat = () => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const navigate = useNavigate();
   const { curUser, logout, token } = useContext(AuthContext);
+
+  //02050707
+  const [activeUsers, setActiveUsers] = useState([])
 
   // Handle Socket Initialization and Listeners
   const messageHandlers = {
@@ -33,6 +37,11 @@ const Chat = () => {
     userLeft: (data) => {
         console.log("on user_left", data);
         setMessages((prevMessages) => [...prevMessages, data]);
+
+    },
+    getActiveUsers:(data) => {
+      console.log("on get_active_users", data);
+      setActiveUsers(data['active_users'])
     },
     authError: (err) => {
         console.log("in auth_err", err.msg);
@@ -59,7 +68,7 @@ const Chat = () => {
     e.preventDefault();
     if (message.trim() && socket) {
       console.log('send message')
-      socket.emit("message", { msg: message, username: curUser });
+      socket.emit("message", { msg: message, username: curUser.username });
       setMessage("");
     }
   };
@@ -87,18 +96,18 @@ const Chat = () => {
 
       <GridItem rowSpan={3} colSpan={2}>
         <Flex justify="space-between">
-          <MyAvatar  user={fakeUser1} />
+          <MyAvatar  curUser={curUser} />
           <Button onClick={handleLogout} bg="gray.800">
             <IoIosLogOutIcon />
           </Button>
         </Flex>
       </GridItem>
-      <GridItem rowSpan={3} colSpan={5}>
-        <Box><h3>messages</h3></Box>
+      <GridItem rowSpan={3} colSpan={5} >
+        <Flex justify="center" fontSize={48}>messages</Flex>
       </GridItem>
       <GridItem rowSpan={17} colSpan={2}>
         <Box>
-          active users
+         {activeUsers.map((activeUser,index) => <MyAvatar key={index} curUser={{username:activeUser, avatarBgColor:generateColorFromUsername(activeUser)}}/>)}
         </Box>
       </GridItem>
       <GridItem rowSpan={17} colSpan={5}>

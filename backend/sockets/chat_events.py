@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, session
 from flask_jwt_extended import decode_token
 from models import User, Message
 from jwt import ExpiredSignatureError, InvalidTokenError
@@ -7,8 +7,8 @@ from flask_socketio import emit, disconnect
 
 
 #TODO: figure out how to implement active users
-active_users = {}
-
+active_users_with_counts = {}  # object of { username1:login_counts, username2:login_counts...}
+active_users = [] # array of usernames
 
 @socketio.on('message')
 def handle_message(data):
@@ -45,10 +45,10 @@ def handle_message(data):
 
     print('new_msg created_at', new_msg.created_at)
     # print('active users',active_users)
-    print(f"Message from {username_from_frontend}: {msg}")
+    print(f"Message from {cur_user.username}: {msg}")
     emit('new_message',{
         'system': False,
-        'username':username_from_frontend,
+        'username':cur_user.username,
         'msg':msg,
         'timeStamp':formatted_dt
         }, broadcast=True )
@@ -78,14 +78,12 @@ def handle_connect(auth):
 
         if user:
             username = user.username
-            if user.id in active_users:
-                active_users[user.id]['session_ids'].append(request.sid)
-                print(f"Authenticated user {username} connected again with session {request.sid}")
-            else:
-                active_users[user.id] = {
-                    "username": username,
-                    'session_ids': [request.sid]
-                }
+            session['username'] = username
+            print('session',session)
+            print()
+            if username not in active_users:
+                active_users.append(username)
+                active_users_with_counts[username] = 1
                 print(f"Authenticated user {username} connected with session {request.sid}")
                 # Emit "user_joined" only the first time the user connects
                 emit('user_joined', {
@@ -93,6 +91,11 @@ def handle_connect(auth):
                     'username': user.username,
                     'msg': f"{user.username} joined the chat"
                 }, broadcast=True)
+            else:
+                active_users_with_counts[username] +=1
+            emit('get_active_users', {'active_users': active_users}, broadcast=True)
+            print('active users after join', active_users)
+            print('active users with count after join', active_users_with_counts)
         else:
             emit('auth_error', {'msg': 'Invalid token, user not found'}, to=request.sid)
             disconnect(request.sid)
@@ -117,14 +120,16 @@ def handle_connect(auth):
 @socketio.on('disconnect')
 def handle_disconnect():
     print('A user disconnected')
+    username = session['username']
+    if active_users_with_counts[username] > 1:
+        active_users_with_counts[username] -=1
+    else: # active_users_with_counts[username] ==1
+        global active_users
+        active_users = [user for user in active_users if user != username]
+        del active_users_with_counts[username]
+        emit('user_left', {'system': True, 'msg': f"{username} left the chat"}, broadcast=True)
+        print(f"User {username}  disconnected from active users!")
+    emit('get_active_users', {'active_users': active_users}, broadcast=True)
+    print('active users after left', active_users)
+    print('active users with count after left', active_users_with_counts)
 
-    for user_id, data in active_users.items():
-        if request.sid in data['session_ids']:
-            data['session_ids'].remove(request.sid)
-            if not data['session_ids']:
-                username = data['username']
-                active_users.pop(user_id)
-                emit('user_left', {'system': True, 'msg': f"{username} left the chat"}, broadcast=True)
-                print(f"User {username} ({user_id}) disconnected from active users!")
-                print(active_users)
-            break

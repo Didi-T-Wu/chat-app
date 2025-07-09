@@ -1,10 +1,10 @@
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 
-import Chat from './components/Chat'
+import Chat from './pages/ChatPage'
 import Signup from './pages/Signup'
 import Login from './pages/Login'
-import ProtectedRoute from './components/ProtectedRoute'
+import ProtectedRoute from './components/routes/ProtectedRoute'
 
 function App() {
   return (

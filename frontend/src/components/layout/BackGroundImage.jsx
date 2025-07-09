@@ -1,5 +1,5 @@
 import {  Image, Box } from "@chakra-ui/react"
-import backgroundImage  from '../assets/kuu-akura-pnK6Q-QTHM4-unsplash.jpg'
+import backgroundImage  from '../../assets/kuu-akura-pnK6Q-QTHM4-unsplash.jpg'
 const BackGroundImage = () => {
 
     return (

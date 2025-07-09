@@ -1,7 +1,7 @@
-import Message from "./ui/myUI/myMessage";
+import Message from "../common/myMessage";
 import { Box, Input, Text, Button } from "@chakra-ui/react"
-import { BsSendIcon } from "../theme/icons"
-import { generateColorFromUsername } from "../helperFunctions";
+import { BsSendIcon } from "../../theme/icons"
+import { generateColorFromUsername } from "../../utils/helperFunctions";
 
 // TODO: add avatarBgColor for other users: put helper function to a file
 const MessagePanel = ({ message, messages, curUser, sendMessage, setMessage}) => {

@@ -6,8 +6,8 @@ import { API_BASE_URL } from '../config';
 import { AuthContext } from '../context/AuthContext';
 
 import SignupForm from "../components/auth/SignupForm";
-import BackGroundImage from "../components/BackGroundImage";
-import Alert from "../components/ui/myUI/myAlert"
+import BackGroundImage from "../components/layout/BackGroundImage";
+import Alert from "../components/common/myAlert"
 
 
 const Signup = ()=> {

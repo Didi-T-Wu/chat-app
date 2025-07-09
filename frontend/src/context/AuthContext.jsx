@@ -1,5 +1,5 @@
 import React,  { createContext, useState, useEffect }  from 'react';
-import { generateColorFromUsername } from '../helperFunctions';
+import { generateColorFromUsername } from '../utils/helperFunctions';
 const AuthContext = createContext()
 
 const AuthProvider = ({children}) => {

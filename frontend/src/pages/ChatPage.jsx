@@ -4,16 +4,16 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { Grid, GridItem, Box, Button, Flex} from "@chakra-ui/react"
 import  { IoIosLogOutIcon } from "../theme/icons"
-import MyAvatar from "./ui/myUI/myAvatar";
+import MyAvatar from "../components/common/myAvatar";
 
-import useSocket from "../hook/useSocket";
-import MessagePanel from "./MessagePanel";
+import useSocket from "../hooks/useSocket";
+import MessagePanel from "../components/chat/MessagePanel";
 
 // 20250703
-import FetchWithAuth from "./FetchWithAuth";
+import FetchWithAuth from "../components/chat/FetchWithAuth";
 
 //20250708
-import { generateColorFromUsername } from "../helperFunctions"
+import { generateColorFromUsername } from "../utils/helperFunctions"
 
 const Chat = () => {
   const [message, setMessage] = useState("");

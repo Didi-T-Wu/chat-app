@@ -1,4 +1,4 @@
-import AuthForm from "../ui/myUI/myForm";
+import AuthForm from "../common/myForm";
 import React, { useState } from 'react';
 import { ClipLoader } from "react-spinners";
 

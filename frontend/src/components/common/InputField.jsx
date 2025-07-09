@@ -1,5 +1,5 @@
 import { Input} from "@chakra-ui/react"
-import { Field } from "../../ui/field"
+import { Field } from "./field"
 import React  from 'react';
 import PropTypes from 'prop-types';
 
